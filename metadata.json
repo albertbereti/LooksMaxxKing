@@ -1,0 +1,7 @@
+{
+  "name": "LooksMaxx King",
+  "description": "AI-powered facial aesthetics analysis and improvement tool.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

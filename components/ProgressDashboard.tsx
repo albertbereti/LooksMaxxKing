@@ -1,15 +1,16 @@
 
 import React from 'react';
-import { ScanHistoryItem } from '../types';
+import { ScanHistoryItem, LooksAnalysis } from '../types';
 import { getProgressStats } from '../services/historyService';
 import { Button } from './Button';
 
 interface ProgressDashboardProps {
   history: ScanHistoryItem[];
   onBack: () => void;
+  onSelectScan: (analysis: LooksAnalysis) => void;
 }
 
-export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({ history, onBack }) => {
+export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({ history, onBack, onSelectScan }) => {
   const stats = getProgressStats(history);
 
   // Sort for chart (Oldest to Newest)
@@ -116,9 +117,13 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({ history, o
       <div className="space-y-4">
         <h3 className="text-xl font-bold text-gray-900 dark:text-white ml-2">History Log</h3>
         {history.map((item) => (
-             <div key={item.id} className="bg-white dark:bg-zinc-900 p-4 md:p-6 rounded-2xl border border-gray-200 dark:border-zinc-800 flex flex-col md:flex-row justify-between items-center gap-4 hover:border-blue-500/30 transition-colors">
+             <button 
+                key={item.id} 
+                onClick={() => onSelectScan(item.analysis)}
+                className="w-full bg-white dark:bg-zinc-900 p-4 md:p-6 rounded-2xl border border-gray-200 dark:border-zinc-800 flex flex-col md:flex-row justify-between items-center gap-4 hover:border-blue-500 transition-colors group text-left shadow-sm hover:shadow-lg"
+             >
                 <div className="flex items-center gap-4 w-full md:w-auto">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold text-white shadow-lg
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold text-white shadow-lg transition-transform group-hover:scale-110
                         ${item.analysis.overallScore >= 7 ? 'bg-emerald-500' : item.analysis.overallScore >= 5 ? 'bg-yellow-500' : 'bg-red-500'}
                     `}>
                         {item.analysis.overallScore}
@@ -138,11 +143,14 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({ history, o
                         <div className="text-[10px] uppercase text-gray-400 dark:text-zinc-600 font-bold">Potential</div>
                         <div className="text-sm font-bold text-purple-500">{item.analysis.potentialScore}</div>
                      </div>
-                     <span className="text-xs px-3 py-1 bg-gray-100 dark:bg-zinc-800 rounded-full text-gray-600 dark:text-zinc-400">
-                        Recorded
-                     </span>
+                     <div className="flex items-center gap-2 text-blue-500 dark:text-blue-400 font-bold text-xs">
+                        View Report
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 group-hover:translate-x-1 transition-transform">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                        </svg>
+                     </div>
                 </div>
-             </div>
+             </button>
         ))}
       </div>
 

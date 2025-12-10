@@ -4,41 +4,31 @@ import { AppState, LooksAnalysis, ScanHistoryItem } from './types';
 import { CameraCapture } from './components/CameraCapture';
 import { AnalysisResult } from './components/AnalysisResult';
 import { ProgressDashboard } from './components/ProgressDashboard';
+import { SettingsModal } from './components/SettingsModal';
 import { Button } from './components/Button';
+import { CrownLogo } from './components/CrownLogo';
 import { analyzeFace } from './services/geminiService';
-import { saveScan, getHistory } from './services/historyService';
+import { saveScan, getHistory, getUserProfile, UserProfile } from './services/historyService';
 
-// Reusable Crown Logo Component with Jewels
-export const CrownLogo: React.FC<{ className?: string }> = ({ className = "w-8 h-8" }) => (
-  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path 
-      d="M2 18C2 19.1046 2.89543 20 4 20H20C21.1046 20 22 19.1046 22 18V16H2V18Z" 
-      className="fill-current" 
-    />
-    <path 
-      d="M12 4L15 10L21 6L19 15H5L3 6L9 10L12 4Z" 
-      stroke="currentColor" 
-      strokeWidth="2.5" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      className="stroke-current fill-none"
-    />
-    <circle cx="12" cy="4" r="1.5" className="fill-current" />
-    <circle cx="21" cy="6" r="1.5" className="fill-current" />
-    <circle cx="3" cy="6" r="1.5" className="fill-current" />
-  </svg>
-);
+const NOISE_BG = "data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.5'/%3E%3C/svg%3E";
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.IDLE);
   const [analysis, setAnalysis] = useState<LooksAnalysis | null>(null);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [history, setHistory] = useState<ScanHistoryItem[]>([]);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('theme');
-      return saved ? saved === 'dark' : true; // Default to dark
+      try {
+        const saved = localStorage.getItem('theme');
+        return saved ? saved === 'dark' : true; // Default to dark
+      } catch (e) {
+        console.warn("LocalStorage access failed (likely private mode). Defaulting to dark theme.");
+        return true;
+      }
     }
     return true;
   });
@@ -46,18 +36,22 @@ const App: React.FC = () => {
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
+      try { localStorage.setItem('theme', 'dark'); } catch(e) {}
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+      try { localStorage.setItem('theme', 'light'); } catch(e) {}
     }
   }, [darkMode]);
 
-  // Load history on mount
+  // Load history and profile on mount
   useEffect(() => {
-    const loadedHistory = getHistory();
-    setHistory(loadedHistory);
+    refreshData();
   }, []);
+
+  const refreshData = () => {
+    setHistory(getHistory());
+    setUserProfile(getUserProfile());
+  };
 
   const toggleTheme = () => setDarkMode(!darkMode);
 
@@ -67,7 +61,7 @@ const App: React.FC = () => {
   };
 
   const showHistory = () => {
-    setHistory(getHistory()); // Refresh history
+    refreshData(); // Refresh history
     setAppState(AppState.HISTORY);
   };
 
@@ -86,8 +80,15 @@ const App: React.FC = () => {
     } catch (err) {
       console.error(err);
       setError("Could not analyze image. Please try again with better lighting or a clearer face shot.");
+      setCurrentImage(null); // Clear image to free memory
       setAppState(AppState.IDLE);
     }
+  };
+
+  const handleSelectHistoryItem = (selectedAnalysis: LooksAnalysis) => {
+    setAnalysis(selectedAnalysis);
+    setCurrentImage(null); // No image stored for history items to save space
+    setAppState(AppState.RESULT);
   };
 
   const handleRetake = () => {
@@ -98,8 +99,15 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#09090b] text-gray-900 dark:text-zinc-100 selection:bg-amber-200 dark:selection:bg-amber-500/30 transition-colors duration-300 flex flex-col font-sans">
-      {/* Navbar */}
-      <header className="px-4 md:px-8 py-5 flex justify-between items-center max-w-7xl mx-auto w-full z-50 relative flex-none">
+      
+      <SettingsModal 
+        isOpen={showSettings} 
+        onClose={() => setShowSettings(false)} 
+        onDataChange={refreshData}
+      />
+
+      {/* Navbar with Safe Area Padding */}
+      <header className="px-4 md:px-8 py-5 pt-safe flex justify-between items-center max-w-7xl mx-auto w-full z-40 relative flex-none">
         <div className="flex items-center gap-3 cursor-pointer group" onClick={handleRetake}>
            <div className="relative">
               <div className="absolute inset-0 bg-amber-400 blur-lg opacity-0 group-hover:opacity-40 transition-opacity rounded-full"></div>
@@ -110,18 +118,35 @@ const App: React.FC = () => {
              <span className="text-amber-500 dark:text-amber-400 ml-1">KING</span>
            </h1>
         </div>
-        <div className="flex items-center gap-3 md:gap-6">
+        <div className="flex items-center gap-3 md:gap-4">
             <nav className="hidden md:flex gap-6 items-center">
+                 {userProfile && (
+                   <span className="text-xs font-bold text-amber-600 dark:text-amber-500 bg-amber-100 dark:bg-amber-900/30 px-3 py-1 rounded-full">
+                     HI, {userProfile.name.toUpperCase()}
+                   </span>
+                 )}
                  <button onClick={showHistory} className="text-xs font-bold uppercase tracking-widest hover:text-amber-500 transition-colors">
                     My Progress
                  </button>
                 <div className="h-4 w-px bg-gray-300 dark:bg-zinc-800"></div>
-                <span className="text-gray-500 dark:text-zinc-500 text-xs font-medium">v3.2 Royal Engine</span>
             </nav>
+            
+            <button 
+                onClick={() => setShowSettings(true)}
+                className="p-2.5 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-800 transition-colors text-gray-600 dark:text-zinc-400"
+                title="Profile & Settings"
+                aria-label="Profile and Settings"
+            >
+               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+               </svg>
+            </button>
+
             <button 
                 onClick={toggleTheme}
                 className="p-2.5 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-800 transition-colors text-gray-600 dark:text-zinc-400 bg-gray-100 dark:bg-zinc-900"
                 title="Toggle Theme"
+                aria-label="Toggle Theme"
             >
                 {darkMode ? (
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -155,10 +180,21 @@ const App: React.FC = () => {
             </div>
 
             <h1 className="text-[12vw] sm:text-7xl md:text-8xl lg:text-9xl font-black mb-6 leading-[0.9] tracking-tighter text-gray-900 dark:text-white">
-              CLAIM YOUR <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-yellow-300 to-amber-600 drop-shadow-sm">
-                CROWN
-              </span>
+              {userProfile ? (
+                 <>
+                    RISE, KING <br/>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-yellow-300 to-amber-600 drop-shadow-sm">
+                      {userProfile.name.toUpperCase()}
+                    </span>
+                 </>
+              ) : (
+                <>
+                  CLAIM YOUR <br/>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-yellow-300 to-amber-600 drop-shadow-sm">
+                    CROWN
+                  </span>
+                </>
+              )}
             </h1>
             
             <p className="text-base md:text-xl text-gray-600 dark:text-zinc-400 mb-10 max-w-xl md:max-w-2xl mx-auto leading-relaxed font-light px-4">
@@ -168,11 +204,18 @@ const App: React.FC = () => {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-sm sm:max-w-none">
                <Button onClick={startScan} variant="primary" className="w-full sm:w-auto text-base md:text-lg px-8 md:px-12 py-4 shadow-xl shadow-amber-500/20 hover:shadow-amber-500/30">
-                 Begin Analysis
+                 {userProfile ? 'New Analysis' : 'Begin Analysis'}
                </Button>
-               <Button onClick={showHistory} variant="secondary" className="w-full sm:w-auto text-base md:text-lg px-8 md:px-12 py-4">
-                 View Progress
-               </Button>
+               {!userProfile && (
+                 <Button onClick={() => setShowSettings(true)} variant="outline" className="w-full sm:w-auto text-base md:text-lg px-8 md:px-12 py-4">
+                   Create Profile
+                 </Button>
+               )}
+               {userProfile && (
+                 <Button onClick={showHistory} variant="secondary" className="w-full sm:w-auto text-base md:text-lg px-8 md:px-12 py-4">
+                   My Progress
+                 </Button>
+               )}
             </div>
              
             <div className="mt-16 flex items-center gap-6 opacity-50 grayscale hover:grayscale-0 transition-all duration-500 hover:opacity-100">
@@ -232,13 +275,14 @@ const App: React.FC = () => {
           <ProgressDashboard 
             history={history} 
             onBack={() => setAppState(AppState.IDLE)} 
+            onSelectScan={handleSelectHistoryItem}
           />
         )}
 
       </main>
 
-      {/* Footer Disclaimer */}
-      <footer className="w-full max-w-7xl mx-auto px-6 py-8 border-t border-gray-200 dark:border-zinc-800 mt-auto text-center z-10">
+      {/* Footer Disclaimer - Safe Area Added */}
+      <footer className="w-full max-w-7xl mx-auto px-6 py-8 border-t border-gray-200 dark:border-zinc-800 mt-auto text-center z-10 pb-[env(safe-area-inset-bottom,20px)]">
           <div className="max-w-2xl mx-auto text-[10px] md:text-xs text-gray-500 dark:text-zinc-600 space-y-2 font-medium">
               <p>
                   <strong>Disclaimer:</strong> This application uses Artificial Intelligence to provide aesthetic analysis and feedback. 
@@ -258,7 +302,7 @@ const App: React.FC = () => {
             <div className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] bg-amber-900/10 rounded-full blur-[120px] opacity-20"></div>
             <div className="absolute bottom-0 right-0 w-[50vw] h-[50vw] bg-blue-900/10 rounded-full blur-[150px] opacity-20"></div>
             {/* Lighter noise for better performance */}
-            <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.02]"></div>
+            <div className="absolute top-0 left-0 w-full h-full opacity-[0.02]" style={{backgroundImage: `url("${NOISE_BG}")`}}></div>
         </div>
 
         {/* Light Mode Backgrounds */}

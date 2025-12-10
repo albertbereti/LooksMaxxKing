@@ -2,214 +2,6 @@
 import { GoogleGenAI, Type, Schema, GenerateContentResponse } from "@google/genai";
 import { LooksAnalysis, ScanData } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-const analysisSchema: Schema = {
-  type: Type.OBJECT,
-  properties: {
-    overallScore: {
-      type: Type.NUMBER,
-      description: "Current aesthetic score (1-10).",
-    },
-    potentialScore: {
-      type: Type.NUMBER,
-      description: "Potential score if all advice is followed (1-10).",
-    },
-    summary: {
-      type: Type.STRING,
-      description: "Brutal but constructive summary of appearance.",
-    },
-    estimatedDaysToPotential: {
-      type: Type.NUMBER,
-      description: "Total number of days to reach the potential score based on physiological limits.",
-    },
-    milestones: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          label: { type: Type.STRING, description: "Short title of milestone, e.g., 'Water Retention Gone'" },
-          week: { type: Type.NUMBER, description: "Week number this milestone occurs" },
-          description: { type: Type.STRING, description: "What changes physically." }
-        },
-        required: ["label", "week", "description"]
-      }
-    },
-    bestFeature: {
-      type: Type.STRING,
-      description: "The user's strongest asset.",
-    },
-    weaknesses: {
-      type: Type.ARRAY,
-      items: { type: Type.STRING },
-      description: "List of specific flaws (e.g., 'Asymmetrical jaw', 'High body fat', 'Acne scars').",
-    },
-    skinAnalysis: {
-      type: Type.OBJECT,
-      properties: {
-        score: { type: Type.NUMBER, description: "Skin quality score (1-10)" },
-        summary: { type: Type.STRING, description: "Analysis of skin texture, pores, and tone." },
-        products: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              reason: { type: Type.STRING },
-              searchQuery: { type: Type.STRING },
-            },
-            required: ["name", "reason", "searchQuery"],
-          },
-        },
-      },
-      required: ["score", "summary", "products"],
-    },
-    eyeAnalysis: {
-      type: Type.OBJECT,
-      properties: {
-        score: { type: Type.NUMBER, description: "Eye area aesthetic score (1-10)" },
-        summary: { type: Type.STRING, description: "Analysis of dark circles, puffiness, canthal tilt, and hooding." },
-        products: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              reason: { type: Type.STRING },
-              searchQuery: { type: Type.STRING },
-            },
-            required: ["name", "reason", "searchQuery"],
-          },
-        },
-      },
-      required: ["score", "summary", "products"],
-    },
-    hydrationAnalysis: {
-      type: Type.OBJECT,
-      properties: {
-        score: { type: Type.NUMBER, description: "Hydration level score (1-10) based on visual indicators." },
-        summary: { type: Type.STRING, description: "Analysis of hydration signs like dry lips, dull skin, or sunken eyes." },
-        products: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              reason: { type: Type.STRING },
-              searchQuery: { type: Type.STRING },
-            },
-            required: ["name", "reason", "searchQuery"],
-          },
-        },
-      },
-      required: ["score", "summary", "products"],
-    },
-    beardAnalysis: {
-      type: Type.OBJECT,
-      properties: {
-        score: { type: Type.NUMBER, description: "Beard/Facial hair aesthetic score (1-10). If female or clean shaven, score based on grooming." },
-        summary: { type: Type.STRING, description: "Analysis of density, patchiness, grooming, and style suitability." },
-        products: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              reason: { type: Type.STRING },
-              searchQuery: { type: Type.STRING },
-            },
-            required: ["name", "reason", "searchQuery"],
-          },
-        },
-      },
-      required: ["score", "summary", "products"],
-    },
-    earAnalysis: {
-      type: Type.OBJECT,
-      properties: {
-        score: { type: Type.NUMBER, description: "Ear aesthetic score (1-10)." },
-        summary: { type: Type.STRING, description: "Analysis of ear size, protrusion/pinning, and grooming." },
-        products: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              reason: { type: Type.STRING },
-              searchQuery: { type: Type.STRING },
-            },
-            required: ["name", "reason", "searchQuery"],
-          },
-        },
-      },
-      required: ["score", "summary", "products"],
-    },
-    hairAnalysis: {
-      type: Type.OBJECT,
-      properties: {
-        score: { type: Type.NUMBER, description: "Hair aesthetic score (1-10)." },
-        summary: { type: Type.STRING, description: "Analysis of hairline, density, thickness, and overall health." },
-        products: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              reason: { type: Type.STRING },
-              searchQuery: { type: Type.STRING },
-            },
-            required: ["name", "reason", "searchQuery"],
-          },
-        },
-      },
-      required: ["score", "summary", "products"],
-    },
-    features: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          feature: { type: Type.STRING },
-          score: { type: Type.NUMBER },
-          comment: { type: Type.STRING },
-        },
-        required: ["feature", "score", "comment"],
-      },
-    },
-    improvements: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          title: { type: Type.STRING },
-          description: { type: Type.STRING },
-          priority: { type: Type.STRING, enum: ["High", "Medium", "Low"] },
-          category: { type: Type.STRING, enum: ["Health", "Grooming", "Fitness", "Aesthetics"] },
-          stepByStep: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-            description: "3-4 actionable bullet points to achieve this improvement.",
-          },
-          products: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                name: { type: Type.STRING, description: "Name of product, e.g., 'Ninja Creami'" },
-                reason: { type: Type.STRING, description: "Why they need it, e.g., 'For low calorie protein ice cream'" },
-                searchQuery: { type: Type.STRING, description: "Search term for Amazon, e.g., 'Ninja Creami ice cream maker'" },
-              },
-              required: ["name", "reason", "searchQuery"],
-            },
-          },
-        },
-        required: ["title", "description", "priority", "category", "stepByStep", "products"],
-      },
-    },
-  },
-  required: ["overallScore", "potentialScore", "summary", "weaknesses", "features", "improvements", "bestFeature", "skinAnalysis", "eyeAnalysis", "hydrationAnalysis", "beardAnalysis", "earAnalysis", "hairAnalysis", "estimatedDaysToPotential", "milestones"],
-};
-
 // Helper for delay
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -217,6 +9,11 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
  * Retries an async operation with exponential backoff if it fails with specific error codes.
  */
 async function retryWithBackoff<T>(fn: () => Promise<T>, retries = 3, initialDelay = 2000): Promise<T> {
+  // Network Check
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    throw new Error("No internet connection. Please check your network and try again.");
+  }
+
   let currentDelay = initialDelay;
   for (let i = 0; i < retries; i++) {
     try {
@@ -247,12 +44,249 @@ async function retryWithBackoff<T>(fn: () => Promise<T>, retries = 3, initialDel
   throw new Error("Request failed after max retries");
 }
 
+async function ensureKey() {
+    if (typeof window !== 'undefined' && (window as any).aistudio) {
+        const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+        if (!hasKey) {
+            await (window as any).aistudio.openSelectKey();
+        }
+    }
+}
+
+const analysisSchema: Schema = {
+  type: Type.OBJECT,
+  properties: {
+    overallScore: { type: Type.NUMBER },
+    potentialScore: { type: Type.NUMBER },
+    summary: { type: Type.STRING },
+    estimatedDaysToPotential: { type: Type.NUMBER },
+    milestones: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          label: { type: Type.STRING },
+          week: { type: Type.NUMBER },
+          description: { type: Type.STRING }
+        },
+        required: ["label", "week", "description"]
+      }
+    },
+    bestFeature: { type: Type.STRING },
+    weaknesses: {
+      type: Type.ARRAY,
+      items: { type: Type.STRING },
+    },
+    skinAnalysis: {
+      type: Type.OBJECT,
+      properties: {
+        score: { type: Type.NUMBER },
+        summary: { type: Type.STRING },
+        products: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING },
+              reason: { type: Type.STRING },
+              searchQuery: { type: Type.STRING },
+            },
+            required: ["name", "reason", "searchQuery"],
+          },
+        },
+      },
+      required: ["score", "summary", "products"],
+    },
+    eyeAnalysis: {
+      type: Type.OBJECT,
+      properties: {
+        score: { type: Type.NUMBER },
+        summary: { type: Type.STRING },
+        products: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING },
+              reason: { type: Type.STRING },
+              searchQuery: { type: Type.STRING },
+            },
+            required: ["name", "reason", "searchQuery"],
+          },
+        },
+      },
+      required: ["score", "summary", "products"],
+    },
+    hydrationAnalysis: {
+      type: Type.OBJECT,
+      properties: {
+        score: { type: Type.NUMBER },
+        summary: { type: Type.STRING },
+        products: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING },
+              reason: { type: Type.STRING },
+              searchQuery: { type: Type.STRING },
+            },
+            required: ["name", "reason", "searchQuery"],
+          },
+        },
+      },
+      required: ["score", "summary", "products"],
+    },
+    beardAnalysis: {
+      type: Type.OBJECT,
+      properties: {
+        score: { type: Type.NUMBER },
+        summary: { type: Type.STRING },
+        products: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING },
+              reason: { type: Type.STRING },
+              searchQuery: { type: Type.STRING },
+            },
+            required: ["name", "reason", "searchQuery"],
+          },
+        },
+      },
+      required: ["score", "summary", "products"],
+    },
+    earAnalysis: {
+      type: Type.OBJECT,
+      properties: {
+        score: { type: Type.NUMBER },
+        summary: { type: Type.STRING },
+        products: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING },
+              reason: { type: Type.STRING },
+              searchQuery: { type: Type.STRING },
+            },
+            required: ["name", "reason", "searchQuery"],
+          },
+        },
+      },
+      required: ["score", "summary", "products"],
+    },
+    hairAnalysis: {
+      type: Type.OBJECT,
+      properties: {
+        score: { type: Type.NUMBER },
+        summary: { type: Type.STRING },
+        products: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING },
+              reason: { type: Type.STRING },
+              searchQuery: { type: Type.STRING },
+            },
+            required: ["name", "reason", "searchQuery"],
+          },
+        },
+      },
+      required: ["score", "summary", "products"],
+    },
+    hairlineAnalysis: {
+      type: Type.OBJECT,
+      properties: {
+        score: { type: Type.NUMBER },
+        shape: { type: Type.STRING },
+        summary: { type: Type.STRING },
+        products: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING },
+              reason: { type: Type.STRING },
+              searchQuery: { type: Type.STRING },
+            },
+            required: ["name", "reason", "searchQuery"],
+          },
+        },
+      },
+      required: ["score", "shape", "summary", "products"],
+    },
+    hardmaxxing: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          name: { type: Type.STRING, description: "Medical name of procedure, e.g., 'Rhinoplasty', 'Bimaxillary Osteotomy'." },
+          type: { type: Type.STRING, enum: ['Surgical', 'Non-Surgical', 'Dental'] },
+          costEstimate: { type: Type.STRING, description: "Estimated price range in USD, e.g., '$5,000 - $10,000'." },
+          recoveryTime: { type: Type.STRING, description: "Estimated downtime, e.g., '2 Weeks'." },
+          painLevel: { type: Type.STRING, enum: ['Low', 'Moderate', 'High'] },
+          riskLevel: { type: Type.STRING, enum: ['Low', 'Moderate', 'High'] },
+          description: { type: Type.STRING, description: "Technical/Scientific explanation of what is done." },
+          expectedResult: { type: Type.STRING, description: "The visual outcome on the face." }
+        },
+        required: ["name", "type", "costEstimate", "recoveryTime", "painLevel", "riskLevel", "description", "expectedResult"]
+      }
+    },
+    features: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          feature: { type: Type.STRING },
+          score: { type: Type.NUMBER },
+          comment: { type: Type.STRING },
+        },
+        required: ["feature", "score", "comment"],
+      },
+    },
+    improvements: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          title: { type: Type.STRING },
+          description: { type: Type.STRING },
+          priority: { type: Type.STRING, enum: ["High", "Medium", "Low"] },
+          category: { type: Type.STRING, enum: ["Health", "Grooming", "Fitness", "Aesthetics"] },
+          stepByStep: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+          },
+          products: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING },
+                reason: { type: Type.STRING },
+                searchQuery: { type: Type.STRING },
+              },
+              required: ["name", "reason", "searchQuery"],
+            },
+          },
+        },
+        required: ["title", "description", "priority", "category", "stepByStep", "products"],
+      },
+    },
+  },
+  required: ["overallScore", "potentialScore", "summary", "weaknesses", "features", "improvements", "bestFeature", "hardmaxxing", "skinAnalysis", "eyeAnalysis", "hydrationAnalysis", "beardAnalysis", "earAnalysis", "hairAnalysis", "hairlineAnalysis", "estimatedDaysToPotential", "milestones"],
+};
+
 export const analyzeFace = async (base64Image: string): Promise<LooksAnalysis> => {
   try {
+    await ensureKey();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
     // Use gemini-2.5-flash for fast text analysis
     const model = "gemini-2.5-flash";
-    // NOTE: For text generation we use the existing global `ai` instance with process.env.API_KEY
 
     // Retry logic specifically for the analysis call as well
     const response = await retryWithBackoff<GenerateContentResponse>(() => ai.models.generateContent({
@@ -266,50 +300,31 @@ export const analyzeFace = async (base64Image: string): Promise<LooksAnalysis> =
             },
           },
           {
-            text: `Act as a ruthless, elite aesthetics and health coach. Your job is to analyze the user's face to identify flaws, weaknesses, and bad health indicators, and provide a "looksmaxxing" and "healthmaxxing" protocol with a timeline.
+            text: `Act as a world-renowned Plastic Surgeon and Elite Aesthetics Consultant. Your job is to analyze the user's face with ruthless precision to identify flaws and provide a comprehensive "looksmaxxing" roadmap.
+
+            You must provide both "Softmaxxing" (Grooming/Health) and "Hardmaxxing" (Medical/Surgical) advice.
 
             Analyze:
-            1. Facial Symmetry & Structure (Jawline, Chin, Eyes).
-            2. Skin Quality (Texture, Acne, Aging).
-            3. Eye Area (Dark circles, puffiness, canthal tilt, upper eyelid exposure/hooding).
-            4. Hydration Indicators (Dry/cracked lips, sunken eyes, dull skin tone, fine lines).
-            5. Facial Hair / Beard (Density, patchiness, grooming, style suitability).
-            6. Ears (Size, shape, protrusion, grooming).
-            7. Hair & Hairline (Density, thickness, hairline recession/maturity, overall health).
-            8. Health Indicators (Bloating/Puffiness -> Cortisol/Diet; Pale -> Iron/Sun; Dark Circles -> Sleep).
-            9. Grooming & Style.
+            1. Facial Bone Structure (Le Fort classification, Gonial angle, Chin projection, Cheekbones).
+            2. Skin Quality & Aging.
+            3. Eye Area (Canthal tilt, scleral show, orbital vector).
+            4. Hydration & Health (Cortisol bloat, inflammation).
+            5. Hair/Beard/Hairline.
+
+            HARDMAXXING SECTION (Medical Procedures):
+            Identify 3-5 specific medical, surgical, or dental interventions that would drastically improve this specific face. 
+            - Use professional technical terms (e.g., "Bimaxillary Osteotomy", "Rhinoplasty", "Canthoplasty", "Chin Wing Implant").
+            - Estimate costs in USD accurately.
+            - Estimate recovery time.
+            - EDUCATE THE USER: In the description, explain the "finest detail" of the procedure. Explain the anatomy involved, the mechanism of the change, and why it is scientifically necessary for this specific face. Allow the user to become an expert on their own face.
 
             Create a TIMELINE:
-            - Estimate how many days it will take to reach their "Potential Score" (realistic physiological timeframes).
-            - Provide 3-4 Milestones (e.g., Week 1: Water Weight Flush, Week 6: Skin Turnover, Week 12: Muscle Definition).
+            - Estimate days to potential.
+            - Milestones for softmaxxing.
 
-            BE EXTREMELY SPECIFIC ABOUT PRODUCTS. You MUST recommend products to fix their specific issues.
+            RECOMMEND PRODUCTS for Softmaxxing (as before).
             
-            Product Mapping Rules (Use these if relevant):
-            - If Face is Puffy/Bloated/Undefined Jaw: Recommend "Portable Sauna" (for detox/water weight), "Ice Roller", "Gua Sha", or "Mastic Gum".
-            - If Skin needs improvement: Recommend "Hyaluronic Acid", "CeraVe Retinol Serum", "Korean Sunscreen (SPF 50)", "Vitamin C Serum".
-            - If Eyes have dark circles or bags: Recommend "Caffeine Eye Cream", "Gold Under-Eye Patches", "Volufiline" (if hollow).
-            - If Dehydrated (dry lips/skin): Recommend "Electrolyte Powder", "Cool Mist Humidifier", "Lip Mask", "Large Stainless Water Bottle".
-            - If Beard is patchy/thin: Recommend "Minoxidil 5% Foam", "Derma Roller (0.5mm)", "Castor Oil".
-            - If Beard is messy/coarse: Recommend "Beard Oil", "Boar Bristle Brush", "Beard Balm".
-            - If Hair is thinning or bad quality: Recommend "Rosemary Oil", "Derma Stamp", "Biotin Supplements", "Ketoconazole Shampoo".
-            - If Ears are large/protruding or need grooming: Recommend "Ear Wax Removal Kit", "Ear Oil", "Hair Trimmer".
-            - If they look like they have high body fat or need diet help: Recommend "Ninja Creami" (explain it's for making healthy protein ice cream/anabolic recipes), "Food Scale".
-            - If Teeth are yellow: Recommend "Whitening Strips".
-            - General Health: "Magnesium Glycinate" (sleep), "Creatine Monohydrate".
-
-            Output strict JSON.
-            - 'weaknesses': Be direct. e.g., "Recessed chin", "High facial fat", "Asymmetrical eyes".
-            - 'skinAnalysis': Detailed texture score and product recommendations.
-            - 'eyeAnalysis': Detailed score for eyes, mentioning hooding/tilt/circles.
-            - 'hydrationAnalysis': Score (1-10) and analysis of hydration signs.
-            - 'beardAnalysis': Score (1-10) for facial hair.
-            - 'earAnalysis': Score (1-10) and analysis of ears.
-            - 'hairAnalysis': Score (1-10) and analysis of hair quality and hairline.
-            - 'potentialScore': What they COULD be if they follow your advice.
-            - 'estimatedDaysToPotential': Number of days.
-            - 'milestones': Array of milestones with 'week', 'label', and 'description'.
-            - 'improvements': Break down into categories. Include step-by-step instructions and the specific products.
+            Output strict JSON matching the schema.
             `,
           },
         ],
@@ -334,18 +349,8 @@ export const analyzeFace = async (base64Image: string): Promise<LooksAnalysis> =
   }
 };
 
-async function ensureKey() {
-    if (typeof window !== 'undefined' && (window as any).aistudio) {
-        const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-        if (!hasKey) {
-            await (window as any).aistudio.openSelectKey();
-        }
-    }
-}
-
 /**
  * Generates an "Optimal Version" image of the user.
- * Now supports distinct 'Archetypes' for variety.
  */
 export const generateOptimalImage = async (base64Image: string, archetype: 'prime' | 'titan' | 'icon' = 'prime'): Promise<string> => {
   try {
@@ -426,7 +431,7 @@ export const generateVisualGuide = async (base64Image: string, topic: string): P
 }
 
 /**
- * Generates specific style inspiration images (Hair, Fashion, Accessories)
+ * Generates specific style inspiration images
  */
 export const generateStyleInspiration = async (base64Image: string, category: 'hair' | 'fashion' | 'grooming'): Promise<string> => {
   try {
@@ -467,7 +472,7 @@ export const generateStyleInspiration = async (base64Image: string, category: 'h
 }
 
 /**
- * Generates a cinematic 16:9 wallpaper of the user.
+ * Generates a cinematic 16:9 wallpaper.
  */
 export const generateCinematicWallpaper = async (base64Image: string): Promise<string> => {
   try {
@@ -501,12 +506,13 @@ export const generateCinematicWallpaper = async (base64Image: string): Promise<s
 }
 
 /**
- * Generates scientific metrics data for a visual scan.
+ * Generates scientific metrics.
  */
 export const generateScanMetrics = async (base64Image: string, topic: string): Promise<ScanData> => {
   try {
+      await ensureKey();
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       // Use text model for data analysis
-      // Note: We are using the main `ai` instance here which assumes text generation context
       const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
       
       const response = await retryWithBackoff<GenerateContentResponse>(() => ai.models.generateContent({
@@ -524,11 +530,6 @@ export const generateScanMetrics = async (base64Image: string, topic: string): P
                  - 'value': The estimated value or score (e.g., '140mm', 'Moderate', '1.65 (Near Ideal)').
                  - 'status': 'Optimal', 'Average', or 'Suboptimal'.
               2. 'insight': A 2-sentence scientific medical-aesthetic observation about this specific topic for this face.
-
-              Examples:
-              Structure: Bigonial Width, Jaw-Chinthroat Angle, Symmetry Deviation.
-              Skin: Pore Density, Texture Variance, Erythema Score.
-              Golden Ratio: Thirds Balance, Face W/H Ratio, Canthal Tilt.
               ` 
             },
           ],
@@ -564,4 +565,42 @@ export const generateScanMetrics = async (base64Image: string, topic: string): P
       console.error("Metric analysis failed:", error);
       throw error;
   }
+}
+
+/**
+ * Generates a "Post-Op" simulation image for a specific procedure.
+ */
+export const generateProcedureSimulation = async (base64Image: string, procedureName: string, description: string): Promise<string> => {
+    try {
+        await ensureKey();
+        const imageAi = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
+
+        const prompt = `Generate a hyper-realistic "After" photo of this person showing the clinical results of a ${procedureName}. 
+        Context of procedure: ${description}. 
+        The image should look like a professional plastic surgery "After" result. 
+        Retain the person's identity perfectly but apply the structural and anatomical changes of the surgery as described.
+        Maintain same lighting and angle as original for comparison.`;
+
+        const response = await retryWithBackoff<GenerateContentResponse>(() => imageAi.models.generateContent({
+            model: 'gemini-3-pro-image-preview',
+            contents: {
+                parts: [
+                    { inlineData: { mimeType: "image/jpeg", data: base64Data } },
+                    { text: prompt },
+                ],
+            },
+            config: {
+                imageConfig: { aspectRatio: "1:1", imageSize: "1K" }
+            },
+        }));
+
+        for (const part of response.candidates?.[0]?.content?.parts || []) {
+            if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
+        }
+        throw new Error("No simulation generated.");
+    } catch (error) {
+        console.error("Procedure simulation failed:", error);
+        throw error;
+    }
 }

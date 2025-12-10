@@ -20,6 +20,17 @@ export interface ImprovementTip {
   products: ProductRecommendation[];
 }
 
+export interface MedicalProcedure {
+  name: string;
+  type: 'Surgical' | 'Non-Surgical' | 'Dental';
+  costEstimate: string; // e.g. "$5,000 - $8,000"
+  recoveryTime: string; // e.g. "2 Weeks"
+  painLevel: 'Low' | 'Moderate' | 'High';
+  riskLevel: 'Low' | 'Moderate' | 'High';
+  description: string; // Technical explanation
+  expectedResult: string; // What exactly changes visually
+}
+
 export interface SkinAnalysis {
   score: number;
   summary: string;
@@ -56,6 +67,13 @@ export interface HairAnalysis {
   products: ProductRecommendation[];
 }
 
+export interface HairlineAnalysis {
+  score: number;
+  shape: string;
+  summary: string;
+  products: ProductRecommendation[];
+}
+
 export interface Milestone {
   label: string;
   week: number;
@@ -70,12 +88,14 @@ export interface LooksAnalysis {
   weaknesses: string[];
   features: FeatureAnalysis[];
   improvements: ImprovementTip[];
+  hardmaxxing: MedicalProcedure[]; // New Medical Section
   skinAnalysis: SkinAnalysis;
   eyeAnalysis: EyeAnalysis;
   hydrationAnalysis: HydrationAnalysis;
   beardAnalysis: BeardAnalysis;
   earAnalysis: EarAnalysis;
   hairAnalysis: HairAnalysis;
+  hairlineAnalysis?: HairlineAnalysis; 
   estimatedDaysToPotential: number;
   milestones: Milestone[];
 }

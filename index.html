@@ -3,9 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    
+    <!-- SEO & Social Media (Open Graph) -->
+    <meta name="description" content="AI-powered facial aesthetics analysis. Get your score, identify flaws, and visualize your prime potential with LooksMaxx King.">
+    <meta property="og:title" content="LooksMaxx King - AI Face Analysis">
+    <meta property="og:description" content="Get your aesthetic score, identify flaws, and visualize your prime potential.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="LooksMaxx King">
+    
+    <!-- Mobile Web App Capabilities (iOS) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="LooksMaxx King">
+    
+    <!-- Mobile Web App Capabilities (Android/Generic) -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="LooksMaxx King">
+    
+    <!-- Theme Colors -->
     <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)">
     <meta name="theme-color" content="#f9fafb" media="(prefers-color-scheme: light)">
-    <title>LooksMaxx King</title>
+    
+    <title>LooksMaxx King | AI Aesthetics Coach</title>
+    
+    <!-- Favicon (Jeweled Crown) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22><path d=%22M2 18C2 19.1046 2.89543 20 4 20H20C21.1046 20 22 19.1046 22 18V16H2V18Z%22 fill=%22%23fbbf24%22 stroke=%22%23fbbf24%22 stroke-width=%221.5%22 /><path d=%22M12 4L15 10L21 6L19 15H5L3 6L9 10L12 4Z%22 stroke=%22%23fbbf24%22 stroke-width=%221.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/><circle cx=%2212%22 cy=%224%22 r=%221.5%22 fill=%22%23fbbf24%22 /><circle cx=%2221%22 cy=%226%22 r=%221.5%22 fill=%22%23fbbf24%22 /><circle cx=%223%22 cy=%226%22 r=%221.5%22 fill=%22%23fbbf24%22 /></svg>">
+    
+    <!-- PWA Manifest (Data URI) -->
+    <link rel="manifest" href='data:application/manifest+json,{"name":"LooksMaxx King","short_name":"LooksMaxx","start_url":".","display":"standalone","background_color":"#09090b","theme_color":"#09090b","orientation":"portrait","icons":[{"src":"data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22><rect width=%2224%22 height=%2224%22 fill=%22%2309090b%22/><path d=%22M2 18C2 19.1046 2.89543 20 4 20H20C21.1046 20 22 19.1046 22 18V16H2V18Z%22 fill=%22%23fbbf24%22 stroke=%22%23fbbf24%22 stroke-width=%221.5%22 /><path d=%22M12 4L15 10L21 6L19 15H5L3 6L9 10L12 4Z%22 stroke=%22%23fbbf24%22 stroke-width=%221.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/><circle cx=%2212%22 cy=%224%22 r=%221.5%22 fill=%22%23fbbf24%22 /><circle cx=%2221%22 cy=%226%22 r=%221.5%22 fill=%22%23fbbf24%22 /><circle cx=%223%22 cy=%226%22 r=%221.5%22 fill=%22%23fbbf24%22 /></svg>","sizes":"192x192","type":"image/svg+xml"}]}'>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -42,6 +68,8 @@
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         overscroll-behavior-y: none; /* Prevents pull-to-refresh on mobile which ruins camera UI */
+        user-select: none; /* App-like feel */
+        background-color: #09090b; /* Prevent white flash on load */
       }
       /* Hide scrollbar for Chrome, Safari and Opera */
       .no-scrollbar::-webkit-scrollbar {
@@ -56,6 +84,10 @@
       .glass {
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
+      }
+      /* Safe Area support for Notch */
+      .pt-safe {
+        padding-top: env(safe-area-inset-top, 20px);
       }
     </style>
   <script type="importmap">

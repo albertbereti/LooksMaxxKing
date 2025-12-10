@@ -7,6 +7,38 @@ interface CameraCaptureProps {
   onCancel: () => void;
 }
 
+// Utility to compress images before sending to API
+const compressImage = (base64Str: string, maxWidth = 1280, quality = 0.85): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      // Maintain aspect ratio while resizing
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+      } else {
+          resolve(base64Str); // Fallback
+      }
+    };
+    img.onerror = () => {
+        resolve(base64Str); // Fallback
+    }
+  });
+};
+
 export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCancel }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -14,6 +46,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
   const [error, setError] = useState<string | null>(null);
   const [streamActive, setStreamActive] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   // Form State
   const [email, setEmail] = useState('');
@@ -105,8 +138,9 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
     };
   }, []);
 
-  const handleCapture = () => {
+  const handleCapture = async () => {
     if (videoRef.current && canvasRef.current && streamActive) {
+      setIsProcessing(true);
       const video = videoRef.current;
       const canvas = canvasRef.current;
       
@@ -119,8 +153,18 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
         ctx.scale(-1, 1);
         ctx.drawImage(video, 0, 0);
         
-        const imageData = canvas.toDataURL('image/jpeg', 0.9);
-        onCapture(imageData, email, phone);
+        const rawData = canvas.toDataURL('image/jpeg', 0.9);
+        
+        // Compress before sending
+        try {
+            const compressed = await compressImage(rawData);
+            onCapture(compressed, email, phone);
+        } catch (e) {
+            console.error("Compression failed, sending raw", e);
+            onCapture(rawData, email, phone);
+        } finally {
+            setIsProcessing(false);
+        }
       }
     }
   };
@@ -128,10 +172,18 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setIsProcessing(true);
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         const result = reader.result as string;
-        onCapture(result, email, phone);
+        try {
+            const compressed = await compressImage(result);
+            onCapture(compressed, email, phone);
+        } catch (e) {
+            onCapture(result, email, phone);
+        } finally {
+            setIsProcessing(false);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -180,10 +232,10 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
                 ref={fileInputRef}
                 onChange={handleFileUpload}
             />
-            <Button onClick={triggerFileUpload} variant="primary">
-                Upload Photo
+            <Button onClick={triggerFileUpload} variant="primary" disabled={isProcessing}>
+                {isProcessing ? 'Optimizing...' : 'Upload Photo'}
             </Button>
-            <Button onClick={onCancel} variant="outline">
+            <Button onClick={onCancel} variant="outline" disabled={isProcessing}>
                 Cancel
             </Button>
         </div>
@@ -206,7 +258,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
         <canvas ref={canvasRef} className="hidden" />
 
         {/* Scanning Overlay UI */}
-        {streamActive && (
+        {streamActive && !isProcessing && (
             <>
                 <div className="absolute inset-0 pointer-events-none z-10">
                     {/* Scanning Line */}
@@ -242,7 +294,14 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
             </>
         )}
         
-        {(isInitializing || !streamActive) && (
+        {isProcessing && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30 backdrop-blur-sm">
+                <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-white text-sm font-bold tracking-widest animate-pulse">OPTIMIZING SCAN...</p>
+            </div>
+        )}
+        
+        {(isInitializing || !streamActive) && !isProcessing && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 z-20">
                 <div className="animate-spin w-10 h-10 border-2 border-white/20 border-t-amber-500 rounded-full mb-4"></div>
                 <p className="text-zinc-500 text-sm font-medium animate-pulse">Initializing Optical Sensors...</p>
@@ -261,6 +320,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-1/2 bg-zinc-800/50 border border-zinc-700 rounded-xl px-3 py-3 text-white placeholder:text-zinc-500 focus:outline-none focus:border-amber-500 focus:bg-zinc-800 transition-all text-xs md:text-sm text-center appearance-none"
+                disabled={isProcessing}
             />
             <input 
                 type="tel" 
@@ -268,6 +328,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="w-1/2 bg-zinc-800/50 border border-zinc-700 rounded-xl px-3 py-3 text-white placeholder:text-zinc-500 focus:outline-none focus:border-amber-500 focus:bg-zinc-800 transition-all text-xs md:text-sm text-center appearance-none"
+                disabled={isProcessing}
             />
         </div>
 
@@ -275,14 +336,15 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
         <div className="flex justify-between items-center w-full px-2 mt-2">
             <button 
             onClick={onCancel}
-            className="text-zinc-400 hover:text-white font-medium transition-colors px-4 py-2 rounded-full hover:bg-white/5 text-sm"
+            disabled={isProcessing}
+            className="text-zinc-400 hover:text-white font-medium transition-colors px-4 py-2 rounded-full hover:bg-white/5 text-sm disabled:opacity-50"
             >
             Cancel
             </button>
             
             <button 
             onClick={handleCapture}
-            disabled={!streamActive}
+            disabled={!streamActive || isProcessing}
             className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-zinc-700 flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 group shadow-lg shadow-black/50"
             >
             <div className="w-12 h-12 md:w-14 md:h-14 bg-white rounded-full shadow-[0_0_20px_rgba(255,255,255,0.3)] group-active:scale-90 transition-transform group-hover:shadow-[0_0_25px_rgba(255,255,255,0.6)]"></div>
@@ -291,7 +353,8 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
             <div className="relative">
                 <button 
                     onClick={triggerFileUpload}
-                    className="text-zinc-400 hover:text-white font-medium transition-colors flex flex-col items-center gap-1 group p-2 rounded-full hover:bg-white/5"
+                    disabled={isProcessing}
+                    className="text-zinc-400 hover:text-white font-medium transition-colors flex flex-col items-center gap-1 group p-2 rounded-full hover:bg-white/5 disabled:opacity-50"
                     title="Upload Photo"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">

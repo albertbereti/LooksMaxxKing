@@ -1,43 +1,12 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { Button } from './Button';
+import { compressImage } from '../utils/imageUtils';
 
 interface CameraCaptureProps {
   onCapture: (image: string, email?: string, phone?: string) => void;
   onCancel: () => void;
 }
-
-// Utility to compress images before sending to API
-const compressImage = (base64Str: string, maxWidth = 1280, quality = 0.85): Promise<string> => {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.src = base64Str;
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      let width = img.width;
-      let height = img.height;
-
-      // Maintain aspect ratio while resizing
-      if (width > maxWidth) {
-        height = Math.round((height * maxWidth) / width);
-        width = maxWidth;
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', quality));
-      } else {
-          resolve(base64Str); // Fallback
-      }
-    };
-    img.onerror = () => {
-        resolve(base64Str); // Fallback
-    }
-  });
-};
 
 export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCancel }) => {
   const videoRef = useRef<HTMLVideoElement>(null);

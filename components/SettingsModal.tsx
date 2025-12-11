@@ -1,7 +1,7 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './Button';
-import { getUserProfile, saveUserProfile, handleExportDownload, importData, clearHistory, UserProfile } from '../services/historyService';
+import { UserProfile } from '../types';
+import { getUserProfile, saveUserProfile, handleExportDownload, importData, clearHistory } from '../services/historyService';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -36,7 +36,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
     const profile: UserProfile = {
       name,
       email,
-      joinedDate: getUserProfile()?.joinedDate || new Date().toISOString()
+      joinedDate: getUserProfile()?.joinedDate || new Date().toISOString(),
+      isPremium: getUserProfile()?.isPremium || false,
+      isCoach: getUserProfile()?.isCoach || false,
+      usage: getUserProfile()?.usage || {},
+      credits: getUserProfile()?.credits || 0,
+      coachProgress: getUserProfile()?.coachProgress || []
     };
     saveUserProfile(profile);
     setMessage({ text: "Profile updated successfully", type: 'success' });

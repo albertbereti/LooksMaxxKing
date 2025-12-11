@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface ButtonProps {
-  onClick: () => void;
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   children: React.ReactNode;
   variant?: 'primary' | 'secondary' | 'outline';
   className?: string;

@@ -100,10 +100,16 @@ export interface LooksAnalysis {
   milestones: Milestone[];
 }
 
+// Map of category -> base64 image
+export interface GeneratedAssets {
+    [key: string]: string; 
+}
+
 export interface ScanHistoryItem {
   id: string;
   date: string; // ISO String
   analysis: LooksAnalysis;
+  assets?: GeneratedAssets; // Persisted images
 }
 
 export interface ScanMetric {
@@ -117,6 +123,56 @@ export interface ScanData {
   insight: string;
 }
 
+export interface BlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string; // HTML string
+  keywords: string[];
+  publishDate: string;
+}
+
+// === NEW SUBSCRIPTION & USAGE TYPES ===
+
+export interface UsageRecord {
+    count: number;
+    lastReset: string; // ISO Date of start of month
+}
+
+export interface UsageTracker {
+    [category: string]: UsageRecord; // e.g., 'hair', 'surgery', 'optimal'
+}
+
+export interface CoachTask {
+    id: string;
+    text: string;
+    completed: boolean;
+    category: 'HABIT' | 'GROOMING' | 'FITNESS';
+}
+
+export interface CoachDay {
+    date: string; // YYYY-MM-DD
+    tasks: CoachTask[];
+}
+
+export interface UserProfile {
+  name: string;
+  email?: string;
+  joinedDate: string;
+  
+  // Subscription Status
+  isPremium: boolean; // One-time $17.99
+  isCoach: boolean; // Monthly $29.99
+  
+  // Usage Limits
+  usage: UsageTracker;
+  credits: number; // Purchased extra generations
+  
+  // Coach Data
+  coachProgress?: CoachDay[];
+}
+
 export enum AppState {
   IDLE = 'IDLE',
   CAMERA = 'CAMERA',
@@ -124,4 +180,7 @@ export enum AppState {
   RESULT = 'RESULT',
   ERROR = 'ERROR',
   HISTORY = 'HISTORY',
+  BLOG = 'BLOG',
+  ARTICLE = 'ARTICLE',
+  COACH = 'COACH' // New state
 }

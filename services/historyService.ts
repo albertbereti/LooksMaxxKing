@@ -1,24 +1,43 @@
+import { LooksAnalysis, ScanHistoryItem, UserProfile, CoachDay, CoachTask, GeneratedAssets } from "../types";
 
-import { LooksAnalysis, ScanHistoryItem } from "../types";
+const HISTORY_KEY = 'looksmax_scan_history_v2';
+const USER_PROFILE_KEY = 'looksmax_user_profile_v2';
 
-const HISTORY_KEY = 'looksmax_scan_history_v1';
-const USER_PROFILE_KEY = 'looksmax_user_profile_v1';
-const PREMIUM_KEY = 'looksmax_premium_unlocked';
-const THEME_KEY = 'theme';
-
-export interface UserProfile {
-  name: string;
-  email?: string;
-  joinedDate: string;
+// Migration helper
+const migrateOldData = () => {
+    if (typeof window === 'undefined') return;
+    const oldHistory = localStorage.getItem('looksmax_scan_history_v1');
+    if (oldHistory && !localStorage.getItem(HISTORY_KEY)) {
+        localStorage.setItem(HISTORY_KEY, oldHistory);
+    }
+    const oldPremium = localStorage.getItem('looksmax_premium_unlocked');
+    if (oldPremium === 'true') {
+        const profile = getUserProfile() || createDefaultProfile();
+        profile.isPremium = true;
+        saveUserProfile(profile);
+    }
 }
+
+// Initializer
+if (typeof window !== 'undefined') migrateOldData();
+
+const createDefaultProfile = (): UserProfile => ({
+    name: 'Guest',
+    joinedDate: new Date().toISOString(),
+    isPremium: false,
+    isCoach: false,
+    usage: {},
+    credits: 0,
+    coachProgress: []
+});
 
 export const getUserProfile = (): UserProfile | null => {
   if (typeof window === 'undefined') return null;
   try {
     const stored = localStorage.getItem(USER_PROFILE_KEY);
-    return stored ? JSON.parse(stored) : null;
+    return stored ? JSON.parse(stored) : createDefaultProfile();
   } catch (e) {
-    return null;
+    return createDefaultProfile();
   }
 };
 
@@ -49,103 +68,238 @@ export const saveScan = (analysis: LooksAnalysis): ScanHistoryItem[] => {
   const newScan: ScanHistoryItem = {
     id: Date.now().toString(),
     date: new Date().toISOString(),
-    analysis: analysis
+    analysis: analysis,
+    assets: {}
   };
 
-  // Prepend new scan (newest first)
-  const updatedHistory = [newScan, ...currentHistory];
-  
-  // Limit to last 20 scans to save space
-  const trimmedHistory = updatedHistory.slice(0, 20);
-
+  const updatedHistory = [newScan, ...currentHistory].slice(0, 10); // Limit to 10 to prevent storage quotas with images
   try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmedHistory));
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(updatedHistory));
   } catch (e) {
-    console.error("Failed to save scan", e);
+    console.error("Storage full?", e);
+    // Fallback: Remove assets from oldest if full
   }
 
-  return trimmedHistory;
+  return updatedHistory;
+};
+
+// === ASSET PERSISTENCE ===
+
+export const saveGeneratedAsset = (scanId: string, assetKey: string, base64Image: string) => {
+    const history = getHistory();
+    const scanIndex = history.findIndex(h => h.id === scanId);
+    
+    if (scanIndex !== -1) {
+        if (!history[scanIndex].assets) history[scanIndex].assets = {};
+        history[scanIndex].assets![assetKey] = base64Image;
+        
+        try {
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        } catch (e) {
+            console.error("Failed to save asset - likely storage quota", e);
+            alert("Storage full. Image generated but could not be saved to history.");
+        }
+    }
+};
+
+// === USAGE & QUOTA SYSTEM ===
+
+export const checkCanGenerate = (category: string): { allowed: boolean; reason?: 'limit' | 'premium_lock' } => {
+    const profile = getUserProfile();
+    if (!profile) return { allowed: false };
+
+    // 1. Check if Premium is required for this category (Icon/Hardmaxxing/Style)
+    // Note: Prime/Titan are free in UI logic, but if we limit them:
+    // For this prompt, limits apply to "parts of the app".
+    
+    // 2. Check Monthly Limit (5)
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
+    
+    const record = profile.usage[category] || { count: 0, lastReset: currentMonth };
+    
+    // Reset if new month
+    if (record.lastReset !== currentMonth) {
+        record.count = 0;
+        record.lastReset = currentMonth;
+        profile.usage[category] = record;
+        saveUserProfile(profile);
+    }
+
+    if (record.count < 5) {
+        return { allowed: true };
+    }
+
+    // 3. Check Credits
+    if (profile.credits > 0) {
+        return { allowed: true };
+    }
+
+    return { allowed: false, reason: 'limit' };
+};
+
+export const incrementUsage = (category: string) => {
+    const profile = getUserProfile();
+    if (!profile) return;
+
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
+    
+    let record = profile.usage[category];
+    if (!record || record.lastReset !== currentMonth) {
+        record = { count: 0, lastReset: currentMonth };
+    }
+
+    if (record.count < 5) {
+        record.count++;
+    } else if (profile.credits > 0) {
+        profile.credits--;
+    }
+    
+    profile.usage[category] = record;
+    saveUserProfile(profile);
+};
+
+export const addCredits = (amount: number) => {
+    const profile = getUserProfile();
+    if (profile) {
+        profile.credits = (profile.credits || 0) + amount;
+        saveUserProfile(profile);
+    }
+};
+
+export const unlockPremium = () => {
+    const profile = getUserProfile() || createDefaultProfile();
+    profile.isPremium = true;
+    saveUserProfile(profile);
+};
+
+export const unlockCoach = () => {
+    const profile = getUserProfile() || createDefaultProfile();
+    profile.isCoach = true;
+    saveUserProfile(profile);
+};
+
+// === COACH BACKEND ===
+
+export const getCoachSchedule = (): CoachDay[] => {
+    const profile = getUserProfile();
+    if (profile?.coachProgress && profile.coachProgress.length > 0) {
+        // Simple check to ensure we have today
+        const today = new Date().toISOString().slice(0, 10);
+        if (!profile.coachProgress.find(d => d.date === today)) {
+             // Generate today
+             profile.coachProgress.push(generateDailyTasks(today));
+             saveUserProfile(profile);
+        }
+        return profile.coachProgress;
+    }
+
+    // Initialize
+    const today = new Date().toISOString().slice(0, 10);
+    const schedule = [generateDailyTasks(today)];
+    if (profile) {
+        profile.coachProgress = schedule;
+        saveUserProfile(profile);
+    }
+    return schedule;
+};
+
+const generateDailyTasks = (date: string): CoachDay => {
+    return {
+        date,
+        tasks: [
+            { id: '1', text: 'Morning Ice Facial (3 min)', completed: false, category: 'GROOMING' },
+            { id: '2', text: 'Mastic Gum Training (30 min)', completed: false, category: 'FITNESS' },
+            { id: '3', text: 'Drink 3L Water', completed: false, category: 'HABIT' },
+            { id: '4', text: 'Apply Retinol/Moisturizer', completed: false, category: 'GROOMING' },
+            { id: '5', text: 'Posture Check (Chin Tuck)', completed: false, category: 'HABIT' },
+        ]
+    };
+};
+
+export const toggleCoachTask = (date: string, taskId: string) => {
+    const profile = getUserProfile();
+    if (!profile || !profile.coachProgress) return;
+    
+    const day = profile.coachProgress.find(d => d.date === date);
+    if (day) {
+        const task = day.tasks.find(t => t.id === taskId);
+        if (task) {
+            task.completed = !task.completed;
+            saveUserProfile(profile);
+        }
+    }
 };
 
 export const clearHistory = () => {
   try {
-    // True Factory Reset
     localStorage.removeItem(HISTORY_KEY);
     localStorage.removeItem(USER_PROFILE_KEY);
-    localStorage.removeItem(PREMIUM_KEY);
-    // We optionally keep theme, but for a full reset, we can clear it too
-    // localStorage.removeItem(THEME_KEY); 
   } catch (e) {
     console.error("Failed to clear history", e);
   }
 };
 
-// Data Portability for Cross-Device support (Manual)
-export const exportData = (): string => {
-  const history = getHistory();
-  const profile = getUserProfile();
-  const premium = typeof window !== 'undefined' ? localStorage.getItem(PREMIUM_KEY) === 'true' : false;
-  
-  const data = {
-    version: 1,
-    timestamp: new Date().toISOString(),
-    profile,
-    history,
-    premium
-  };
-  return JSON.stringify(data, null, 2);
+// === DATA MANGEMENT & ANALYTICS ===
+
+export const getProgressStats = (history: ScanHistoryItem[]) => {
+    if (history.length === 0) return { startingScore: 0, currentScore: 0, growth: 0, daysTracking: 0 };
+
+    // Sort oldest to newest
+    const sorted = [...history].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    const start = sorted[0];
+    const current = sorted[sorted.length - 1];
+    
+    const startingScore = start.analysis.overallScore;
+    const currentScore = current.analysis.overallScore;
+    const growth = parseFloat((currentScore - startingScore).toFixed(1));
+    
+    // Calculate days
+    const startTime = new Date(start.date).getTime();
+    const lastScanTime = new Date(current.date).getTime();
+    const daysTracking = Math.max(1, Math.ceil((lastScanTime - startTime) / (1000 * 60 * 60 * 24)));
+
+    return {
+        startingScore,
+        currentScore,
+        growth,
+        daysTracking
+    };
 };
 
 export const handleExportDownload = () => {
-  const jsonString = exportData();
-  const blob = new Blob([jsonString], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `looksmax_data_${new Date().toISOString().slice(0, 10)}.json`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  
-  // CLEANUP: Prevent memory leak
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-export const importData = (jsonString: string): boolean => {
-  try {
-    const data = JSON.parse(jsonString);
-    if (data.history && Array.isArray(data.history)) {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(data.history));
-    }
-    if (data.profile) {
-      localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(data.profile));
-    }
-    if (data.premium) {
-      localStorage.setItem(PREMIUM_KEY, 'true');
-    }
-    return true;
-  } catch (e) {
-    console.error("Import failed", e);
-    return false;
-  }
+    if (typeof window === 'undefined') return;
+    
+    const exportData = {
+        history: getHistory(),
+        profile: getUserProfile(),
+        timestamp: new Date().toISOString(),
+        version: '1.0'
+    };
+    
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "looksmax_data.json");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
 };
 
-export const getProgressStats = (history: ScanHistoryItem[]) => {
-  if (history.length === 0) return null;
-
-  // Sort by date ascending for calculations (oldest -> newest)
-  const sorted = [...history].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  
-  const firstScan = sorted[0];
-  const latestScan = sorted[sorted.length - 1];
-  const bestScan = [...history].sort((a, b) => b.analysis.overallScore - a.analysis.overallScore)[0];
-
-  return {
-    startingScore: firstScan.analysis.overallScore,
-    currentScore: latestScan.analysis.overallScore,
-    bestScore: bestScan.analysis.overallScore,
-    growth: Number((latestScan.analysis.overallScore - firstScan.analysis.overallScore).toFixed(1)),
-    totalScans: history.length,
-    daysTracking: Math.ceil((new Date(latestScan.date).getTime() - new Date(firstScan.date).getTime()) / (1000 * 3600 * 24))
-  };
+export const importData = (jsonContent: string): boolean => {
+    try {
+        const data = JSON.parse(jsonContent);
+        if (data.history && Array.isArray(data.history)) {
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(data.history));
+        }
+        if (data.profile) {
+            localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(data.profile));
+        }
+        return true;
+    } catch (e) {
+        console.error("Import failed", e);
+        return false;
+    }
 };

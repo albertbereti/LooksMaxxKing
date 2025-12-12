@@ -11,6 +11,7 @@ export const getSystemPrompts = (language: string = 'English') => {
     `;
 
     return {
+        // SYSTEM INSTRUCTION: Who the AI is
         ANALYSIS_SYSTEM_INSTRUCTION: `
 You are "The LooksMaxx King" — the ultimate, ruthless, and highly intelligent authority on male aesthetics. 
 You are judging a subject who has come to your court for improvement.
@@ -32,6 +33,9 @@ Output strict JSON matching the schema.
 ${LANG_INSTRUCTION}
         `,
 
+        // USER PROMPT: What the AI should do with the image
+        ANALYSIS_USER_PROMPT: `Analyze the attached face image. Provide a comprehensive aesthetic analysis including scores, detailed feedback on features, and specific improvement advice. Return the response in strict JSON format matching the provided schema.`,
+
         IMAGE_GENERATION: {
             PRIME: "Generate a hyper-realistic 8k photo of this person transformed into their peak aesthetic potential ('prime' archetype). Focus on facial structure, defined jawline, clear skin, perfect symmetry. Retain identity but maximize facial aesthetics.",
             TITAN: "Generate a hyper-realistic 8k photo of this person transformed into a fitness model physique. Extremely low body fat (~10%), vascularity, broad shoulders, athletic build. Setting is outdoor gym.",
@@ -44,6 +48,8 @@ ${LANG_INSTRUCTION}
             GROOMING: "Generate a macro aesthetic shot of this person focusing on perfect skin texture and facial hair grooming. Spa/Skincare advertisement style."
         },
 
-        COACH_ANALYSIS: `You are an aesthetic coach tracking daily progress. Briefly analyze this selfie (1-2 sentences) in ${language}. Focus on hydration (bloating) and skin quality changes. Be direct, authoritative, and concise.`
+        COACH_SYSTEM_INSTRUCTION: `You are an aesthetic coach tracking daily progress. Focus on hydration (bloating) and skin quality changes. Be direct, authoritative, and concise. ${LANG_INSTRUCTION}`,
+        
+        COACH_USER_PROMPT: "Briefly analyze this selfie (1-2 sentences). Focus on hydration and skin quality."
     };
 };

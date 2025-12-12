@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { BLOG_POSTS } from '../data/seoContent';
 import { BlogPost } from '../types';
@@ -7,10 +8,19 @@ import { SEOHead } from './SEOHead';
 
 interface BlogSectionProps {
   onBack: () => void;
+  initialPostId?: string | null;
 }
 
-export const BlogSection: React.FC<BlogSectionProps> = ({ onBack }) => {
+export const BlogSection: React.FC<BlogSectionProps> = ({ onBack, initialPostId }) => {
   const [activePost, setActivePost] = useState<BlogPost | null>(null);
+
+  // Handle Deep Linking from Sitemap
+  useEffect(() => {
+    if (initialPostId) {
+        const post = BLOG_POSTS.find(p => p.id === initialPostId);
+        if (post) setActivePost(post);
+    }
+  }, [initialPostId]);
 
   // Scroll to top when switching views
   useEffect(() => {
@@ -29,6 +39,28 @@ export const BlogSection: React.FC<BlogSectionProps> = ({ onBack }) => {
   }, [activePost]);
 
   if (activePost) {
+    // Generate Article Schema
+    const articleSchema = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": activePost.title,
+        "image": "https://looksmaxx.ai/og-image.jpg", // Ideally dynamic per post
+        "datePublished": activePost.publishDate,
+        "author": {
+            "@type": "Organization",
+            "name": "LooksMaxx King"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "LooksMaxx King",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://looksmaxx.ai/logo.png"
+            }
+        },
+        "description": activePost.excerpt
+    };
+
     // SINGLE POST VIEW
     return (
       <div className="w-full max-w-3xl mx-auto px-4 py-8 animate-fade-in pb-20">
@@ -36,6 +68,8 @@ export const BlogSection: React.FC<BlogSectionProps> = ({ onBack }) => {
             title={activePost.title}
             description={activePost.excerpt}
             keywords={activePost.keywords}
+            structuredData={articleSchema}
+            canonicalUrl={`https://looksmaxx.ai/?page=article&id=${activePost.id}`}
         />
         <div className="mb-8">
             <button 
@@ -89,6 +123,7 @@ export const BlogSection: React.FC<BlogSectionProps> = ({ onBack }) => {
         title="LooksMaxx Knowledge Base | Guides & Protocols"
         description="The ultimate library for men's aesthetics. Guides on mewing, skincare, hair loss protocols, and gymmaxxing."
         keywords={["looksmaxxing guides", "how to mew", "fix asymmetrical face", "clear skin for men"]}
+        canonicalUrl="https://looksmaxx.ai/?page=blog"
       />
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">

@@ -169,5 +169,6 @@ declare global {
         _fbq: any;
         gtag: (...args: any[]) => void;
         dataLayer: any[];
+        ttq: any; // TikTok Pixel
     }
 }

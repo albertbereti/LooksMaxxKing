@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AppState, LooksAnalysis, ScanHistoryItem } from './types';
 import { UserProvider, useUser } from './contexts/UserContext';
@@ -30,6 +31,10 @@ const AppContent: React.FC = () => {
   const [currentScanId, setCurrentScanId] = useState<string | undefined>(undefined);
   const [history, setHistory] = useState<ScanHistoryItem[]>([]);
   const [error, setError] = useState<string | null>(null);
+  
+  // Deep Linking State
+  const [initialPostId, setInitialPostId] = useState<string | null>(null);
+  const [initialTermId, setInitialTermId] = useState<string | null>(null);
 
   useEffect(() => {
     setHistory(getHistory());
@@ -38,6 +43,25 @@ const AppContent: React.FC = () => {
         const isDark = saved ? saved === 'dark' : true;
         setDarkMode(isDark);
         document.documentElement.classList.toggle('dark', isDark);
+
+        // --- SEO: HANDLE DEEP LINKS FROM SITEMAP ---
+        // We use query params because we don't have a backend router
+        // Example: looksmaxx.ai/?page=blog&id=jawline-guide
+        const params = new URLSearchParams(window.location.search);
+        const page = params.get('page');
+        const id = params.get('id');
+
+        if (page === 'blog') {
+            setAppState(AppState.BLOG);
+        } else if (page === 'article' && id) {
+            setInitialPostId(id);
+            setAppState(AppState.BLOG);
+        } else if (page === 'coach') {
+            setAppState(AppState.COACH);
+        } else if (page === 'terminology') {
+            if (id) setInitialTermId(id);
+            setAppState(AppState.TERMINOLOGY);
+        }
     }
   }, []);
 
@@ -60,11 +84,17 @@ const AppContent: React.FC = () => {
              });
         }
 
-        // 3. Track Specific Conversion Events
+        // 3. TikTok Pixel PageView
+        if (window.ttq) {
+            window.ttq.page();
+        }
+
+        // 4. Track Specific Conversion Events
         if (appState === AppState.CAMERA) {
             // User is high-intent, they clicked "Start"
             if (window.fbq) window.fbq('track', 'InitiateCheckout', { content_name: 'Started Scan' });
             if (window.gtag) window.gtag('event', 'begin_checkout', { items: [{ item_name: 'AI Scan' }] });
+            if (window.ttq) window.ttq.track('InitiateCheckout', { content_name: 'Started Scan' });
         } 
         else if (appState === AppState.RESULT && analysis) {
             // User successfully got a result
@@ -82,15 +112,26 @@ const AppContent: React.FC = () => {
                     currency: 'USD'
                 });
             }
+            if (window.ttq) {
+                window.ttq.track('ViewContent', { 
+                    content_name: 'Analysis Result',
+                    content_category: 'AI Scan',
+                    value: analysis.overallScore,
+                    currency: 'USD'
+                });
+            }
         }
         else if (appState === AppState.COACH) {
              if (window.fbq) window.fbq('track', 'Lead', { content_name: 'Viewed Coach Dashboard' });
+             if (window.ttq) window.ttq.track('ViewContent', { content_name: 'Viewed Coach Dashboard' });
         }
         else if (appState === AppState.BLOG) {
              if (window.fbq) window.fbq('track', 'ViewContent', { content_name: 'Blog Library' });
+             if (window.ttq) window.ttq.track('ViewContent', { content_name: 'Blog Library' });
         }
         else if (appState === AppState.TERMINOLOGY) {
              if (window.fbq) window.fbq('track', 'ViewContent', { content_name: 'Terminology Dictionary' });
+             if (window.ttq) window.ttq.track('ViewContent', { content_name: 'Terminology Dictionary' });
         }
     }
   }, [appState, analysis]);
@@ -170,9 +211,9 @@ const AppContent: React.FC = () => {
                   />
               );
           case AppState.BLOG:
-              return <BlogSection onBack={() => setAppState(AppState.IDLE)} />;
+              return <BlogSection onBack={() => setAppState(AppState.IDLE)} initialPostId={initialPostId} />;
           case AppState.TERMINOLOGY:
-              return <TerminologyPage onBack={() => setAppState(AppState.IDLE)} />;
+              return <TerminologyPage onBack={() => setAppState(AppState.IDLE)} initialTermId={initialTermId} />;
           case AppState.COACH:
               return <CoachDashboard onBack={() => setAppState(AppState.IDLE)} />;
           default:

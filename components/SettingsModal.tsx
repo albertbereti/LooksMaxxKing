@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './Button';
 import { UserProfile } from '../types';
 import { getUserProfile, saveUserProfile, handleExportDownload, importData, clearHistory } from '../services/historyService';
+import { downloadSitemap } from '../utils/sitemapGenerator';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -107,6 +108,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
       setMessage({ text: "Factory Reset Complete.", type: 'success' });
     }
   };
+
+  const handleDownloadSitemap = () => {
+      downloadSitemap();
+      setMessage({ text: "Sitemap.xml generated!", type: 'success' });
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
@@ -216,6 +222,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
                     className="hidden" 
                     onChange={handleImportFile} 
                   />
+               </div>
+
+               {/* SEO Tools for Admin */}
+               <div className="pt-2">
+                   <Button onClick={handleDownloadSitemap} variant="secondary" className="w-full text-xs py-2">
+                        Admin: Download sitemap.xml
+                   </Button>
                </div>
 
                <div className="pt-4 border-t border-gray-100 dark:border-zinc-800">

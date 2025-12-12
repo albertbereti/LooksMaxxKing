@@ -68,10 +68,11 @@ async function callAnalysisModel(base64Data: string, model: string, prompts: any
       contents: {
         parts: [
           { inlineData: { mimeType: "image/jpeg", data: base64Data } },
-          { text: prompts.ANALYSIS_SYSTEM_INSTRUCTION },
+          { text: prompts.ANALYSIS_USER_PROMPT },
         ],
       },
       config: {
+        systemInstruction: prompts.ANALYSIS_SYSTEM_INSTRUCTION,
         responseMimeType: "application/json",
         responseSchema: ANALYSIS_SCHEMA,
         temperature: 0.5,
@@ -203,8 +204,11 @@ export const analyzeProgressPhoto = async (base64Image: string): Promise<string>
              contents: {
                 parts: [
                     { inlineData: { mimeType: "image/jpeg", data: base64Data } },
-                    { text: prompts.COACH_ANALYSIS }
+                    { text: prompts.COACH_USER_PROMPT }
                 ]
+             },
+             config: {
+                systemInstruction: prompts.COACH_SYSTEM_INSTRUCTION
              }
         }));
         

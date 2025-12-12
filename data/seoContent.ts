@@ -10,6 +10,136 @@ const link = (text: string, query?: string) => {
 
 export const BLOG_POSTS: BlogPost[] = [
     {
+        id: "looksmaxxing-terminology-bible",
+        slug: "looksmaxxing-dictionary-guide",
+        title: "The King's Glossary: Core Terminology & Slang",
+        publishDate: "2024-05-01",
+        keywords: ["mogging", "hunter eyes", "canthal tilt", "looksmaxxing glossary", "smv meaning", "chad vs gigachad"],
+        excerpt: "Do you know if you are 'Mogging' or 'Coping'? The ultimate dictionary for the aesthetics community, decoding everything from SMV to the Blackpill.",
+        content: `
+            <h2>The Basics: Status & Hierarchy</h2>
+            <p>Welcome to the arena. In looksmaxxing, understanding the hierarchy is step one.</p>
+            <ul>
+                <li><strong>Mogging:</strong> To dominate someone aesthetically. If you stand next to someone and look significantly better, you are mogging them.</li>
+                <li><strong>SMV (Sexual Market Value):</strong> A theoretical score of your desirability. It correlates with **LMS** (Looks, Money, Status).</li>
+                <li><strong>The Halo Effect:</strong> The cognitive bias where attractive people are assumed to be smarter, kinder, and more trustworthy. This is why we max.</li>
+            </ul>
+
+            <h2>Archetypes: Where Do You Fit?</h2>
+            <p>We classify men into tiers based on genetics and effort.</p>
+            <ul>
+                <li><strong>Gigachad:</strong> Top 0.1%. Flawless bone structure, 6'4"+, high testosterone.</li>
+                <li><strong>Chadlite / Slayer:</strong> Very attractive, successful with women, but maybe lacks the extreme frame of a Gigachad.</li>
+                <li><strong>HTN (High Tier Normie):</strong> Good looking guy. Can ascend to Chadlite with **Softmaxxing**.</li>
+                <li><strong>Sub5:</strong> Below average. Requires **Hardmaxxing** to ascend.</li>
+            </ul>
+
+            <h2>The Psychology: Cope vs Reality</h2>
+            <p><strong>Cope</strong> is a mental gymnastics used to avoid painful truths. "Looks don't matter, it's all personality" is the ultimate **Bluepill** cope. The **Blackpill** is the nihilistic belief that genetics are destiny. We follow the **Redpill**—acknowledging reality but striving to improve via **Looksmaxxing**.</p>
+        `
+    },
+    {
+        id: "facial-anatomy-metrics-guide",
+        slug: "facial-anatomy-aesthetics-guide",
+        title: "Anatomy of a 10/10: The Metrics of Attraction",
+        publishDate: "2024-05-03",
+        keywords: ["fwhr", "midface ratio", "gonial angle", "upper eyelid exposure", "canthal tilt", "forward growth"],
+        excerpt: "Attraction is math. We break down the FWHR, Midface Ratio, and the specific bone structure required for the 'Face Card'.",
+        content: `
+            <h2>The Eye Area (Ocular)</h2>
+            <p>The eyes are the window to the soul, but the bone is the frame.</p>
+            <ul>
+                <li><strong>Hunter Eyes:</strong> Deep-set eyes with a positive **Canthal Tilt** (outer corner higher than inner) and hooded lids.</li>
+                <li><strong>Scleral Show:</strong> Seeing the white below the iris. This is a flaw called "Prey Eyes".</li>
+                <li><strong>Upper Eyelid Exposure (UEE):</strong> Visible skin above the lashes. Men want minimal UEE.</li>
+            </ul>
+            <p><em>Fixes:</em> ${link("Volufiline", "Volufiline Oil")} for soft tissue, or **Orbital Decompression** (Extreme Hardmaxxing).</p>
+
+            <h2>The Jaw & Lower Third</h2>
+            <p>The symbol of masculinity.</p>
+            <ul>
+                <li><strong>Ramus:</strong> The vertical bone from ear to jaw corner. A long ramus creates a masculine, square face.</li>
+                <li><strong>Gonial Angle:</strong> The sharpness of the jaw corner. 110-120 degrees is ideal.</li>
+                <li><strong>Forward Growth:</strong> The maxilla should project forward. A recessed chin is a death sentence for your side profile.</li>
+            </ul>
+            <p><em>Fixes:</em> ${link("Mastic Gum")} for masseter muscles, **Genioplasty** for bone.</p>
+
+            <h2>Ratios that Matter</h2>
+            <ul>
+                <li><strong>FWHR (Facial Width-to-Height Ratio):</strong> A wide face signals testosterone. Aim for >1.9.</li>
+                <li><strong>Midface Ratio:</strong> The distance between eyes and mouth. A compact midface (approx 1:1) is crucial.</li>
+            </ul>
+        `
+    },
+    {
+        id: "hardmaxxing-vs-softmaxxing-guide",
+        slug: "hardmaxxing-vs-softmaxxing-protocol",
+        title: "Softmaxxing vs. Hardmaxxing: The Complete Protocol",
+        publishDate: "2024-05-05",
+        keywords: ["hardmaxxing", "softmaxxing", "rhinoplasty", "lefort 1", "minoxidil beard", "retinoids", "gua sha"],
+        excerpt: "Should you buy a Gua Sha or book a LeFort I? We compare the non-invasive grooming routines vs clinical surgeries.",
+        content: `
+            <h2>Level 1: Softmaxxing (Grooming & Lifestyle)</h2>
+            <p>Maximize what you have. This is the foundation.</p>
+            
+            <h3>Skin & Aging</h3>
+            <p>You need "Glass Skin".</p>
+            <ul>
+                <li><strong>Retinoids:</strong> ${link("Tretinoin", "Retinol Cream")} increases cell turnover.</li>
+                <li><strong>Snail Mucin:</strong> ${link("COSRX Snail Mucin")} for repair.</li>
+                <li><strong>Derma Rolling:</strong> Using a ${link("Derma Stamp 1.5mm")} to heal scars.</li>
+            </ul>
+
+            <h3>Hair & Beard</h3>
+            <p>Combating the "Norwood Reaper".</p>
+            <ul>
+                <li><strong>Minoxidil:</strong> ${link("Rogaine Foam")} for hair and beard density.</li>
+                <li><strong>Finasteride:</strong> The nuclear option for stopping hair loss (Prescription).</li>
+                <li><strong>Castor Oil:</strong> ${link("Jamaican Black Castor Oil")} for eyebrows.</li>
+            </ul>
+
+            <h3>Structure (Non-Surgical)</h3>
+            <ul>
+                <li><strong>Mewing:</strong> Tongue posture to expand the palate.</li>
+                <li><strong>Gua Sha:</strong> ${link("Stainless Steel Gua Sha")} for lymphatic drainage (de-bloating).</li>
+            </ul>
+
+            <h2>Level 2: Hardmaxxing (Surgical & Clinical)</h2>
+            <p>Changing the bone itself. High risk, high reward.</p>
+            <ul>
+                <li><strong>LeFort I/II/III:</strong> Cutting the jaw bone to advance the midface. The "God" surgery.</li>
+                <li><strong>Rhinoplasty:</strong> Removing dorsal humps or refining the tip.</li>
+                <li><strong>Genioplasty:</strong> Sliding the chin bone forward for projection.</li>
+                <li><strong>Implants:</strong> Custom PEEK implants for the **Gonial Angle** or **Infraorbital Rim**.</li>
+            </ul>
+        `
+    },
+    {
+        id: "physique-style-maxxing",
+        slug: "physique-style-guide",
+        title: "Frame & Style: The Outer Shell",
+        publishDate: "2024-05-07",
+        keywords: ["v-taper", "old money aesthetic", "capsule wardrobe", "neck training", "body fat percentage"],
+        excerpt: "Your face is the card, but your body is the frame. V-Taper, Neck thickness, and Old Money aesthetics explained.",
+        content: `
+            <h2>Physique: The V-Taper</h2>
+            <p>The ideal male body is an inverted triangle.</p>
+            <ul>
+                <li><strong>Shoulder-to-Waist Ratio:</strong> Broad shoulders, narrow waist. Train lateral delts.</li>
+                <li><strong>Neck Training:</strong> A thick neck signals power. Use a ${link("Neck Harness")} to target the Sternocleidomastoid.</li>
+                <li><strong>Body Fat:</strong> You need to be 10-12% to reveal facial aesthetics. **Bulking** makes you look strong but bloated; **Cutting** reveals the jaw.</li>
+            </ul>
+
+            <h2>Stylemaxxing: Visual Engineering</h2>
+            <p>Don't dress like a teenager.</p>
+            <ul>
+                <li><strong>Old Money:</strong> The meta aesthetic. Neutral colors (Navy, Cream, Grey), high quality fabrics (Linen, Wool), and zero logos.</li>
+                <li><strong>Capsule Wardrobe:</strong> Own fewer items, but higher quality. A perfect white tee, fitted black jeans, and ${link("Chelsea Boots")}.</li>
+                <li><strong>Accessories:</strong> A simple steel watch and a ${link("Cuban Link Chain")} add instant status points.</li>
+            </ul>
+        `
+    },
+    {
         id: "jawline-guide",
         slug: "how-to-get-sharp-jawline-men",
         title: "The Ultimate Guide to a Sharp Jawline: Mastic Gum, Mewing, and Hardmaxxing",
@@ -408,6 +538,112 @@ export const BLOG_POSTS: BlogPost[] = [
             <p>No one inspects your face as closely as you do. Most people see the aggregate—your vibe, your grooming, your fitness, and your confidence. A 1mm asymmetry is invisible to the world.</p>
 
             <p><strong>Action Step:</strong> Focus on what you can change (gym, skin, grooming) and accept what you cannot (height, skull shape). The goal is to be <em>your</em> best, not <em>the</em> best. Read ${link("The Body Keeps the Score")} to understand how trauma affects your self-perception.</p>
+        `
+    },
+    {
+        id: "facial-asymmetry-fix",
+        slug: "how-to-fix-facial-asymmetry",
+        title: "Fixing Facial Asymmetry: Why One Side of Your Face Lags",
+        publishDate: "2024-05-15",
+        keywords: ["facial asymmetry", "sleeping on side face", "chewing one side", "masseter imbalance"],
+        excerpt: "Is one side of your face dropping? It's likely your habits. Learn how to fix asymmetry caused by sleeping and chewing.",
+        content: `
+            <h2>The Silent Killer of Harmony</h2>
+            <p>Perfect symmetry doesn't exist, but noticeable asymmetry ruins facial harmony. It's rarely genetic; it's usually behavioral.</p>
+
+            <h3>The 3 Main Causes</h3>
+            
+            <h4>1. Side Sleeping (The Smush)</h4>
+            <p>If you sleep on your stomach or side, you are applying 8 hours of pressure to your face nightly. This causes the "sleep wrinkles" and flattens the cheekbone on that side.</p>
+            <p><strong>Fix:</strong> Train yourself to sleep on your back using a ${link("Cervical Neck Pillow")}.</p>
+
+            <h4>2. Unilateral Chewing</h4>
+            <p>Most people chew on their dominant side. This leads to one Masseter muscle being huge (wide jaw) and the other atrophying (weak jaw), shifting the chin center.</p>
+            <p><strong>Fix:</strong> Consciously chew on your weak side. Use ${link("Mastic Gum")} on the weak side for 10 minutes a day to balance hypertrophy.</p>
+
+            <h4>3. Posture Imbalance</h4>
+            <p>A tilted pelvis or scoliosis pulls on the neck muscles (SCM), which pulls on the jaw. Fix your hips to fix your face.</p>
+        `
+    },
+    {
+        id: "beard-maxxing-makeup",
+        slug: "beard-growth-minoxidil-guide",
+        title: "Beard Maxxing: The Makeup for Men",
+        publishDate: "2024-05-20",
+        keywords: ["minoxidil beard journey", "dermarolling for beard", "beard neckline guide", "peppermint oil beard"],
+        excerpt: "A beard is the ultimate cheat code. It hides a weak chin, creates a fake jawline, and adds dimorphism. Here is the growth protocol.",
+        content: `
+            <h2>The Ultimate Cheat Code</h2>
+            <p>If you lack a sharp jawline, grow a beard. It adds artificial volume and darkness to the lower third, mimicking high testosterone bone structure.</p>
+
+            <h3>The Growth Protocol</h3>
+            <p>If you are patchy, you need to stimulate the follicles.</p>
+            <ul>
+                <li><strong>Minoxidil 5%:</strong> Apply ${link("Rogaine Foam")} twice daily to the beard area. It turns vellus hairs terminal.</li>
+                <li><strong>Dermarolling:</strong> Use a ${link("0.5mm Derma Roller")} 2x a week. Wait 24h before applying Minoxidil after rolling.</li>
+                <li><strong>Peppermint Oil:</strong> A natural vasodilator. Mix ${link("Peppermint Essential Oil")} with Jojoba oil (3% concentration).</li>
+            </ul>
+
+            <h3>The Grooming Rules</h3>
+            <p>Do not trim your beard on the jawline bone. This makes your face look fat (double chin exposed).</p>
+            <p><strong>The Rule:</strong> The neckline should be 1 inch above the Adam's Apple. Create a sharp line here to create the illusion of a deep, projected jaw.</p>
+        `
+    },
+    {
+        id: "height-maxxing-posture",
+        slug: "how-to-get-taller-posture-style",
+        title: "Height Maxxing: Posture, Lifts, and Illusion",
+        publishDate: "2024-05-25",
+        keywords: ["how to get taller posture", "anterior pelvic tilt fix", "shoe lifts for men", "monochromatic outfits"],
+        excerpt: "You can't change your DNA, but you can change your geometry. Gain 2 inches through posture correction and style engineering.",
+        content: `
+            <h2>Geometry and Illusion</h2>
+            <p>Height is a massive component of SMV. While you can't lengthen bones without surgery, most men walk around 1-2 inches shorter than their potential due to "Nerd Neck" and Anterior Pelvic Tilt.</p>
+
+            <h3>1. Mechanical Fixes</h3>
+            <p>Fixing <strong>Anterior Pelvic Tilt</strong> (butt sticking out) and <strong>Forward Head Posture</strong> aligns the spine vertically.</p>
+            <ul>
+                <li>Strengthen Glutes & Abs.</li>
+                <li>Stretch Hip Flexors.</li>
+                <li>Do "Chin Tucks" daily against a wall.</li>
+            </ul>
+
+            <h3>2. Style Engineering</h3>
+            <ul>
+                <li><strong>Boots:</strong> Wear ${link("Chelsea Boots")} or Air Maxes. They add 1.2 - 1.5 inches naturally.</li>
+                <li><strong>Insoles:</strong> Use ${link("Height Increase Insoles")} (1 inch max). Anything more destroys your walk.</li>
+                <li><strong>Monochromatic:</strong> Dressing in one color (all black) creates a vertical line, preventing the eye from breaking your frame.</li>
+            </ul>
+        `
+    },
+    {
+        id: "aesthetic-diet-face",
+        slug: "diet-for-face-aesthetics-bloating",
+        title: "The Aesthetics Diet: Eating for Bone Structure and Skin",
+        publishDate: "2024-05-28",
+        keywords: ["diet for acne", "debloating face diet", "potassium sodium balance", "foods for testosterone"],
+        excerpt: "You are what you eat. Inflammatory oils cause acne. Sodium causes moon face. Here is the diet for sharp features.",
+        content: `
+            <h2>Eat for Structure, Not Just Macros</h2>
+            <p>Bodybuilders eat for muscle. You need to eat for <strong>Face Gains</strong>.</p>
+
+            <h3>1. The Debloating Protocol</h3>
+            <p>If you have a "Moon Face", it's likely water retention held by Sodium.</p>
+            <ul>
+                <li><strong>Cut Sodium:</strong> Stop eating processed foods.</li>
+                <li><strong>Increase Potassium:</strong> Potassium pumps water out of cells. Eat 4700mg daily (Potatoes, Bananas, Coconut Water).</li>
+                <li><strong>Water:</strong> Drink 4L+ to flush the kidneys.</li>
+            </ul>
+
+            <h3>2. The Anti-Acne Protocol</h3>
+            <p>Inflammation shows on your face.</p>
+            <ul>
+                <li><strong>Eliminate Seed Oils:</strong> Canola, Soybean, Sunflower oil. They are highly inflammatory. Cook with Butter, Tallow, or Olive Oil.</li>
+                <li><strong>Reduce Dairy:</strong> Skim milk is linked to acne (IGF-1 spikes).</li>
+            </ul>
+
+            <h3>3. Bone Nutrients</h3>
+            <p>To support facial bone density, you need <strong>Vitamin K2 (MK-4)</strong> and <strong>D3</strong>. Eat grass-fed butter, egg yolks, and hard cheeses.</p>
         `
     }
 ];

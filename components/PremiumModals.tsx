@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from './Button';
 import { CrownLogo } from './CrownLogo';
+import { PRICING } from '../config';
 
 interface PaywallModalProps {
     onClose: () => void;
@@ -35,11 +36,11 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({ onClose, onPurchase,
                     </div>
                 </div>
                 <div className="text-center mb-6">
-                    <span className="text-3xl font-black text-white">$17.99</span>
+                    <span className="text-3xl font-black text-white">${PRICING.PREMIUM_LIFETIME}</span>
                     <span className="text-zinc-500 text-sm font-medium"> / Lifetime Access</span>
                 </div>
                 <Button onClick={onPurchase} className="w-full py-4 text-lg shadow-[0_0_20px_rgba(245,158,11,0.4)]" disabled={isProcessing}>
-                    {isProcessing ? 'Processing...' : 'Unlock Everything'}
+                    {isProcessing ? 'Opening Checkout...' : 'Unlock Everything'}
                 </Button>
                 <button onClick={onClose} className="w-full text-center text-zinc-500 text-xs mt-4 hover:text-white">Maybe Later</button>
             </div>
@@ -63,7 +64,7 @@ export const TopUpModal: React.FC<TopUpModalProps> = ({ onClose, onPurchase, isP
                 <h2 className="text-2xl font-black text-white mb-2">Monthly Limit Reached</h2>
                 <p className="text-zinc-400 text-sm mb-6">You have used your 5 free generations for this section. Refuel your capacity.</p>
                 <Button onClick={onPurchase} className="w-full py-3 mb-3 bg-blue-600 hover:bg-blue-500 text-white" disabled={isProcessing}>
-                    {isProcessing ? 'Processing...' : 'Get 25 More Generations - $4.99'}
+                    {isProcessing ? 'Opening Checkout...' : `Get ${PRICING.CREDIT_PACK_AMOUNT} More Generations - $${PRICING.CREDIT_PACK_PRICE}`}
                 </Button>
                 <button onClick={onClose} className="text-zinc-500 text-xs">Cancel</button>
             </div>

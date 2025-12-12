@@ -4,6 +4,7 @@ import { BLOG_POSTS } from '../data/seoContent';
 import { BlogPost } from '../types';
 import { CrownLogo } from './CrownLogo';
 import { Button } from './Button';
+import { SEOHead } from './SEOHead';
 
 interface BlogSectionProps {
   onBack: () => void;
@@ -21,6 +22,11 @@ export const BlogSection: React.FC<BlogSectionProps> = ({ onBack }) => {
     // SINGLE POST VIEW
     return (
       <div className="w-full max-w-3xl mx-auto px-4 py-8 animate-fade-in pb-20">
+        <SEOHead 
+            title={activePost.title}
+            description={activePost.excerpt}
+            keywords={activePost.keywords}
+        />
         <div className="mb-8">
             <button 
                 onClick={() => setActivePost(null)}
@@ -69,6 +75,12 @@ export const BlogSection: React.FC<BlogSectionProps> = ({ onBack }) => {
   // LIST VIEW
   return (
     <div className="w-full max-w-5xl mx-auto px-4 py-8 animate-fade-in pb-20">
+      <SEOHead 
+        title="LooksMaxx Knowledge Base | Guides & Protocols"
+        description="The ultimate library for men's aesthetics. Guides on mewing, skincare, hair loss protocols, and gymmaxxing."
+        keywords={["looksmaxxing guides", "how to mew", "fix asymmetrical face", "clear skin for men"]}
+      />
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">
         <div>
             <div className="flex items-center gap-2 mb-2">

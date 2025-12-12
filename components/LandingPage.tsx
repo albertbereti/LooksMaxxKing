@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from './Button';
 import { CrownLogo } from './CrownLogo';
 import { UserProfile } from '../types';
+import { SEOHead } from './SEOHead';
 
 interface LandingPageProps {
   onStart: () => void;
@@ -21,7 +22,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 }) => {
   return (
     <div className="text-center w-full max-w-4xl animate-fade-in-up px-2 sm:px-4 flex flex-col items-center">
-            
+        {/* SEO Injection: Invisible to user, visible to Google */}
+        <SEOHead 
+            title="AI Face Rating & Aesthetics Coach" 
+            description="Get your AI face rating, identify flaws like negative canthal tilt, and get a looksmaxxing guide. The most advanced aesthetic analysis tool."
+            keywords={["looksmaxxing", "ai face rating", "canthal tilt calculator", "hunter eyes", "mewing guide", "jawline exercises", "facial symmetry test"]}
+        />
+
         <div className="mb-8 md:mb-10 relative">
             <div className="absolute inset-0 bg-amber-500 blur-[50px] opacity-20 dark:opacity-30 rounded-full"></div>
             <CrownLogo className="w-20 h-20 md:w-28 md:h-28 text-gray-900 dark:text-white relative z-10 drop-shadow-2xl" />

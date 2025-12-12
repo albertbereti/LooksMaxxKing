@@ -12,6 +12,8 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mountedRef = useRef(true);
+
   const [error, setError] = useState<string | null>(null);
   const [streamActive, setStreamActive] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -22,11 +24,16 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
   const [phone, setPhone] = useState('');
 
   useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  useEffect(() => {
     let stream: MediaStream | null = null;
-    let mounted = true;
 
     const startCamera = async () => {
       try {
+        if (!mountedRef.current) return;
         setError(null);
         setIsInitializing(true);
         
@@ -55,7 +62,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
           }
         }
 
-        if (!mounted) {
+        if (!mountedRef.current) {
             if (stream) {
                 (stream as MediaStream).getTracks().forEach(track => track.stop());
             }
@@ -65,15 +72,17 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
         if (videoRef.current && stream) {
           videoRef.current.srcObject = stream;
           videoRef.current.onloadedmetadata = () => {
-            if (mounted && videoRef.current) {
+            if (mountedRef.current && videoRef.current) {
                 videoRef.current.play()
-                .then(() => setStreamActive(true))
+                .then(() => {
+                    if (mountedRef.current) setStreamActive(true);
+                })
                 .catch(e => console.warn("Play error:", e));
             }
           };
         }
       } catch (err: any) {
-        if (!mounted) return;
+        if (!mountedRef.current) return;
         
         let userMessage = "Could not access camera.";
         const errorName = err.name || '';
@@ -93,14 +102,13 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
 
         setError(userMessage);
       } finally {
-        if (mounted) setIsInitializing(false);
+        if (mountedRef.current) setIsInitializing(false);
       }
     };
 
     startCamera();
 
     return () => {
-      mounted = false;
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
@@ -132,7 +140,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
             console.error("Compression failed, sending raw", e);
             onCapture(rawData, email, phone);
         } finally {
-            setIsProcessing(false);
+            if (mountedRef.current) setIsProcessing(false);
         }
       }
     }
@@ -151,7 +159,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
         } catch (e) {
             onCapture(result, email, phone);
         } finally {
-            setIsProcessing(false);
+            if (mountedRef.current) setIsProcessing(false);
         }
       };
       reader.readAsDataURL(file);

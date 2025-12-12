@@ -1,4 +1,5 @@
-import { LooksAnalysis, ScanHistoryItem, UserProfile, CoachDay, CoachTask, GeneratedAssets } from "../types";
+
+import { LooksAnalysis, ScanHistoryItem, UserProfile } from "../types";
 
 const HISTORY_KEY = 'looksmax_scan_history_v2';
 const USER_PROFILE_KEY = 'looksmax_user_profile_v2';
@@ -24,12 +25,54 @@ if (typeof window !== 'undefined') migrateOldData();
 const createDefaultProfile = (): UserProfile => ({
     name: 'Guest',
     joinedDate: new Date().toISOString(),
+    // Detect browser language or default to English
+    language: typeof navigator !== 'undefined' && navigator.language ? navigator.language : 'English',
     isPremium: false,
     isCoach: false,
     usage: {},
     credits: 0,
     coachProgress: []
 });
+
+// Helper for Safe Saving with Quota Management
+const safeSave = (key: string, data: any) => {
+    try {
+        localStorage.setItem(key, JSON.stringify(data));
+    } catch (e: any) {
+        if (e.name === 'QuotaExceededError' || e.code === 22) {
+            console.warn("Storage quota exceeded. Attempting to trim history...");
+            
+            // If we are trying to save history, trim it hard
+            if (key === HISTORY_KEY && Array.isArray(data)) {
+                 const trimmed = data.slice(0, Math.max(1, data.length - 3)); // Remove 3 oldest
+                 try {
+                     localStorage.setItem(key, JSON.stringify(trimmed));
+                     return;
+                 } catch (retryErr) {
+                     // Still full? Emergency mode.
+                     console.error("Critical storage full. Saving only most recent.");
+                     localStorage.setItem(key, JSON.stringify([data[0]]));
+                 }
+            } else {
+                // If saving something else (like profile), try cleaning history to make space
+                try {
+                    const currentHistory = getHistory();
+                    if (currentHistory.length > 2) {
+                        const shrunkHistory = currentHistory.slice(0, currentHistory.length - 2);
+                        localStorage.setItem(HISTORY_KEY, JSON.stringify(shrunkHistory));
+                        // Try saving original data again
+                        localStorage.setItem(key, JSON.stringify(data));
+                    }
+                } catch (finalErr) {
+                    console.error("Could not free space.", finalErr);
+                    alert("Storage full. Please export your data and clear history.");
+                }
+            }
+        }
+    }
+}
+
+// === USER REPOSITORY ===
 
 export const getUserProfile = (): UserProfile | null => {
   if (typeof window === 'undefined') return null;
@@ -42,12 +85,22 @@ export const getUserProfile = (): UserProfile | null => {
 };
 
 export const saveUserProfile = (profile: UserProfile) => {
-  try {
-    localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
-  } catch (e) {
-    console.error("Failed to save profile", e);
-  }
+  safeSave(USER_PROFILE_KEY, profile);
 };
+
+export const unlockPremium = () => {
+    const profile = getUserProfile() || createDefaultProfile();
+    profile.isPremium = true;
+    saveUserProfile(profile);
+};
+
+export const unlockCoach = () => {
+    const profile = getUserProfile() || createDefaultProfile();
+    profile.isCoach = true;
+    saveUserProfile(profile);
+};
+
+// === HISTORY REPOSITORY ===
 
 export const getHistory = (): ScanHistoryItem[] => {
   if (typeof window === 'undefined') return [];
@@ -72,18 +125,14 @@ export const saveScan = (analysis: LooksAnalysis): ScanHistoryItem[] => {
     assets: {}
   };
 
-  const updatedHistory = [newScan, ...currentHistory].slice(0, 10); // Limit to 10 to prevent storage quotas with images
-  try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(updatedHistory));
-  } catch (e) {
-    console.error("Storage full?", e);
-    // Fallback: Remove assets from oldest if full
-  }
+  const updatedHistory = [newScan, ...currentHistory].slice(0, 10); // Limit count
+  safeSave(HISTORY_KEY, updatedHistory);
 
-  return updatedHistory;
+  // Return what was actually saved (re-read in case of trimming)
+  return getHistory(); 
 };
 
-// === ASSET PERSISTENCE ===
+// === ASSET REPOSITORY ===
 
 export const saveGeneratedAsset = (scanId: string, assetKey: string, base64Image: string) => {
     const history = getHistory();
@@ -93,26 +142,17 @@ export const saveGeneratedAsset = (scanId: string, assetKey: string, base64Image
         if (!history[scanIndex].assets) history[scanIndex].assets = {};
         history[scanIndex].assets![assetKey] = base64Image;
         
-        try {
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-        } catch (e) {
-            console.error("Failed to save asset - likely storage quota", e);
-            alert("Storage full. Image generated but could not be saved to history.");
-        }
+        safeSave(HISTORY_KEY, history);
     }
 };
 
-// === USAGE & QUOTA SYSTEM ===
+// === QUOTA LOGIC (Business Logic coupled to User Profile) ===
 
 export const checkCanGenerate = (category: string): { allowed: boolean; reason?: 'limit' | 'premium_lock' } => {
     const profile = getUserProfile();
     if (!profile) return { allowed: false };
 
-    // 1. Check if Premium is required for this category (Icon/Hardmaxxing/Style)
-    // Note: Prime/Titan are free in UI logic, but if we limit them:
-    // For this prompt, limits apply to "parts of the app".
-    
-    // 2. Check Monthly Limit (5)
+    // Check Monthly Limit (5)
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
     
@@ -130,7 +170,7 @@ export const checkCanGenerate = (category: string): { allowed: boolean; reason?:
         return { allowed: true };
     }
 
-    // 3. Check Credits
+    // Check Credits
     if (profile.credits > 0) {
         return { allowed: true };
     }
@@ -168,69 +208,7 @@ export const addCredits = (amount: number) => {
     }
 };
 
-export const unlockPremium = () => {
-    const profile = getUserProfile() || createDefaultProfile();
-    profile.isPremium = true;
-    saveUserProfile(profile);
-};
-
-export const unlockCoach = () => {
-    const profile = getUserProfile() || createDefaultProfile();
-    profile.isCoach = true;
-    saveUserProfile(profile);
-};
-
-// === COACH BACKEND ===
-
-export const getCoachSchedule = (): CoachDay[] => {
-    const profile = getUserProfile();
-    if (profile?.coachProgress && profile.coachProgress.length > 0) {
-        // Simple check to ensure we have today
-        const today = new Date().toISOString().slice(0, 10);
-        if (!profile.coachProgress.find(d => d.date === today)) {
-             // Generate today
-             profile.coachProgress.push(generateDailyTasks(today));
-             saveUserProfile(profile);
-        }
-        return profile.coachProgress;
-    }
-
-    // Initialize
-    const today = new Date().toISOString().slice(0, 10);
-    const schedule = [generateDailyTasks(today)];
-    if (profile) {
-        profile.coachProgress = schedule;
-        saveUserProfile(profile);
-    }
-    return schedule;
-};
-
-const generateDailyTasks = (date: string): CoachDay => {
-    return {
-        date,
-        tasks: [
-            { id: '1', text: 'Morning Ice Facial (3 min)', completed: false, category: 'GROOMING' },
-            { id: '2', text: 'Mastic Gum Training (30 min)', completed: false, category: 'FITNESS' },
-            { id: '3', text: 'Drink 3L Water', completed: false, category: 'HABIT' },
-            { id: '4', text: 'Apply Retinol/Moisturizer', completed: false, category: 'GROOMING' },
-            { id: '5', text: 'Posture Check (Chin Tuck)', completed: false, category: 'HABIT' },
-        ]
-    };
-};
-
-export const toggleCoachTask = (date: string, taskId: string) => {
-    const profile = getUserProfile();
-    if (!profile || !profile.coachProgress) return;
-    
-    const day = profile.coachProgress.find(d => d.date === date);
-    if (day) {
-        const task = day.tasks.find(t => t.id === taskId);
-        if (task) {
-            task.completed = !task.completed;
-            saveUserProfile(profile);
-        }
-    }
-};
+// === DATA MANGEMENT & ANALYTICS ===
 
 export const clearHistory = () => {
   try {
@@ -240,8 +218,6 @@ export const clearHistory = () => {
     console.error("Failed to clear history", e);
   }
 };
-
-// === DATA MANGEMENT & ANALYTICS ===
 
 export const getProgressStats = (history: ScanHistoryItem[]) => {
     if (history.length === 0) return { startingScore: 0, currentScore: 0, growth: 0, daysTracking: 0 };
@@ -292,10 +268,10 @@ export const importData = (jsonContent: string): boolean => {
     try {
         const data = JSON.parse(jsonContent);
         if (data.history && Array.isArray(data.history)) {
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(data.history));
+            safeSave(HISTORY_KEY, data.history);
         }
         if (data.profile) {
-            localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(data.profile));
+            safeSave(USER_PROFILE_KEY, data.profile);
         }
         return true;
     } catch (e) {

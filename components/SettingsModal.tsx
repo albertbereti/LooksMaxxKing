@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './Button';
 import { UserProfile } from '../types';
@@ -9,9 +10,25 @@ interface SettingsModalProps {
   onDataChange: () => void; // Trigger refresh in parent
 }
 
+const LANGUAGES = [
+    { code: 'en', label: 'English' },
+    { code: 'es', label: 'Español' },
+    { code: 'fr', label: 'Français' },
+    { code: 'de', label: 'Deutsch' },
+    { code: 'it', label: 'Italiano' },
+    { code: 'pt', label: 'Português' },
+    { code: 'zh', label: '中文 (Chinese)' },
+    { code: 'ja', label: '日本語 (Japanese)' },
+    { code: 'ko', label: '한국어 (Korean)' },
+    { code: 'ru', label: 'Русский (Russian)' },
+    { code: 'hi', label: 'हिन्दी (Hindi)' },
+    { code: 'ar', label: 'العربية (Arabic)' },
+];
+
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onDataChange }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [language, setLanguage] = useState('English');
   const [activeTab, setActiveTab] = useState<'profile' | 'data'>('profile');
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -22,6 +39,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
       if (profile) {
         setName(profile.name);
         setEmail(profile.email || '');
+        setLanguage(profile.language || 'English');
       }
     }
   }, [isOpen]);
@@ -33,15 +51,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
        setMessage({ text: "Name is required", type: 'error' });
        return;
     }
+    const current = getUserProfile();
     const profile: UserProfile = {
+      ...current!, // Keep existing data safe
       name,
       email,
-      joinedDate: getUserProfile()?.joinedDate || new Date().toISOString(),
-      isPremium: getUserProfile()?.isPremium || false,
-      isCoach: getUserProfile()?.isCoach || false,
-      usage: getUserProfile()?.usage || {},
-      credits: getUserProfile()?.credits || 0,
-      coachProgress: getUserProfile()?.coachProgress || []
+      language, // Save language preference
     };
     saveUserProfile(profile);
     setMessage({ text: "Profile updated successfully", type: 'success' });
@@ -134,6 +149,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
                     placeholder="Enter your King Name"
                     className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-3 text-gray-900 dark:text-white focus:outline-none focus:border-amber-500 transition-colors"
                  />
+               </div>
+               <div>
+                 <label className="block text-xs font-bold text-gray-500 dark:text-zinc-500 uppercase mb-1">Language (AI Output)</label>
+                 <select 
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-3 text-gray-900 dark:text-white focus:outline-none focus:border-amber-500 transition-colors appearance-none"
+                 >
+                    {LANGUAGES.map(lang => (
+                        <option key={lang.code} value={lang.label}>{lang.label}</option>
+                    ))}
+                    <option value="English">English (Default)</option>
+                 </select>
                </div>
                <div>
                  <label className="block text-xs font-bold text-gray-500 dark:text-zinc-500 uppercase mb-1">Email (Optional)</label>

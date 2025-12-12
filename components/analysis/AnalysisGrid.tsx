@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { LooksAnalysis, SubAnalysis } from '../../types';
 import { getAmazonLink, getScoreColor } from '../../utils/analysisUtils';
@@ -21,7 +22,7 @@ const CategoryCard = ({ title, data }: { title: string, data: SubAnalysis }) => 
         <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-gray-200 dark:border-zinc-800 shadow-sm flex flex-col h-full">
             <div className="flex justify-between items-center mb-4">
                 <h3 className="font-bold text-gray-900 dark:text-white">{title}</h3>
-                <span className={`text-xl font-black ${getScoreColor(data.score)}`}>{data.score}/10</span>
+                <span className={`text-xl font-black ${getScoreColor(data.score)}`}>{data.score.toFixed(1)}/10</span>
             </div>
             <div className="space-y-2 flex-grow">
                 {data.products.map((prod, i) => (

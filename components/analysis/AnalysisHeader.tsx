@@ -47,7 +47,7 @@ export const AnalysisHeader: React.FC<AnalysisHeaderProps> = ({ analysis, imageD
                     </div>
                     <div className="text-center">
                         <h2 className="text-gray-500 dark:text-zinc-500 uppercase tracking-[0.2em] text-[10px] md:text-xs font-bold mb-1">Current Reality</h2>
-                        <div className={`text-5xl md:text-7xl font-black tracking-tighter ${getScoreColor(analysis.overallScore)}`}>{analysis.overallScore}</div>
+                        <div className={`text-5xl md:text-7xl font-black tracking-tighter ${getScoreColor(analysis.overallScore)}`}>{analysis.overallScore.toFixed(1)}</div>
                     </div>
                 </div>
 
@@ -82,7 +82,7 @@ export const AnalysisHeader: React.FC<AnalysisHeaderProps> = ({ analysis, imageD
                     </div>
                     <div className="text-center">
                         <h2 className="text-amber-600 dark:text-amber-500 uppercase tracking-[0.2em] text-[10px] md:text-xs font-bold mb-1">Genetic Potential</h2>
-                        <div className="text-5xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-amber-300 to-amber-600">{analysis.potentialScore}</div>
+                        <div className="text-5xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-amber-300 to-amber-600">{analysis.potentialScore.toFixed(1)}</div>
                     </div>
                 </div>
             </div>

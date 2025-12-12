@@ -55,17 +55,17 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({ history, o
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm">
             <div className="text-xs uppercase font-bold text-gray-500 dark:text-zinc-500 mb-1">Starting Score</div>
-            <div className="text-3xl font-black text-gray-900 dark:text-zinc-300">{stats.startingScore}</div>
+            <div className="text-3xl font-black text-gray-900 dark:text-zinc-300">{stats.startingScore.toFixed(1)}</div>
         </div>
         <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm relative overflow-hidden">
             <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
             <div className="text-xs uppercase font-bold text-blue-600 dark:text-blue-400 mb-1">Current Score</div>
-            <div className="text-3xl font-black text-blue-600 dark:text-blue-400">{stats.currentScore}</div>
+            <div className="text-3xl font-black text-blue-600 dark:text-blue-400">{stats.currentScore.toFixed(1)}</div>
         </div>
         <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm">
              <div className="text-xs uppercase font-bold text-gray-500 dark:text-zinc-500 mb-1">Total Growth</div>
              <div className={`text-3xl font-black ${stats.growth >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                {stats.growth > 0 ? '+' : ''}{stats.growth}
+                {stats.growth > 0 ? '+' : ''}{stats.growth.toFixed(1)}
              </div>
         </div>
         <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm">
@@ -95,7 +95,7 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({ history, o
                         <div key={item.id} className="flex-1 flex flex-col items-center group relative min-w-[40px]">
                              {/* Tooltip */}
                              <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black text-white text-xs py-1 px-2 rounded pointer-events-none whitespace-nowrap z-20">
-                                Score: {item.analysis.overallScore}
+                                Score: {item.analysis.overallScore.toFixed(1)}
                              </div>
                              
                              <div 
@@ -126,14 +126,14 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({ history, o
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold text-white shadow-lg transition-transform group-hover:scale-110
                         ${item.analysis.overallScore >= 7 ? 'bg-emerald-500' : item.analysis.overallScore >= 5 ? 'bg-yellow-500' : 'bg-red-500'}
                     `}>
-                        {item.analysis.overallScore}
+                        {item.analysis.overallScore.toFixed(1)}
                     </div>
                     <div>
                         <div className="font-bold text-gray-900 dark:text-white">{new Date(item.date).toLocaleDateString()}</div>
                         <div className="text-xs text-gray-500 dark:text-zinc-500">
-                            Skin: {item.analysis.skinAnalysis?.score || '-'} • 
-                            Eyes: {item.analysis.eyeAnalysis?.score || '-'} • 
-                            Beard: {item.analysis.beardAnalysis?.score || '-'}
+                            Skin: {item.analysis.skinAnalysis?.score?.toFixed(1) || '-'} • 
+                            Eyes: {item.analysis.eyeAnalysis?.score?.toFixed(1) || '-'} • 
+                            Beard: {item.analysis.beardAnalysis?.score?.toFixed(1) || '-'}
                         </div>
                     </div>
                 </div>
@@ -141,7 +141,7 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({ history, o
                 <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
                      <div className="text-right mr-4">
                         <div className="text-[10px] uppercase text-gray-400 dark:text-zinc-600 font-bold">Potential</div>
-                        <div className="text-sm font-bold text-purple-500">{item.analysis.potentialScore}</div>
+                        <div className="text-sm font-bold text-purple-500">{item.analysis.potentialScore.toFixed(1)}</div>
                      </div>
                      <div className="flex items-center gap-2 text-blue-500 dark:text-blue-400 font-bold text-xs">
                         View Report

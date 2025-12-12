@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { LooksAnalysis } from '../types';
 import { Button } from './Button';
@@ -182,8 +183,8 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysis, imageD
   return (
     <div className="w-full max-w-7xl mx-auto flex flex-col gap-6 animate-fade-in pb-20 px-4 sm:px-6 lg:px-8">
       <SEOHead 
-        title={`Your AI Face Analysis Score: ${analysis.overallScore}/10`} 
-        description={`My facial aesthetic score is ${analysis.overallScore}.`}
+        title={`Your AI Face Analysis Score: ${analysis.overallScore.toFixed(1)}/10`} 
+        description={`My facial aesthetic score is ${analysis.overallScore.toFixed(1)}.`}
       />
 
       {/* --- MODALS --- */}

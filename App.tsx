@@ -69,6 +69,10 @@ const AppContent: React.FC = () => {
   
   useEffect(() => {
     if (typeof window !== 'undefined') {
+        // Guard against localhost tracking
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (isLocal) return;
+
         const virtualPath = `/${appState.toLowerCase()}`;
         
         // 1. Facebook Pixel PageView

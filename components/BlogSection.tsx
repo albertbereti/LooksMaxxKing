@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { BLOG_POSTS } from '../data/seoContent';
 import { BlogPost } from '../types';
@@ -16,6 +15,17 @@ export const BlogSection: React.FC<BlogSectionProps> = ({ onBack }) => {
   // Scroll to top when switching views
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, [activePost]);
+
+  // Facebook Pixel: Track specific article view
+  useEffect(() => {
+    if (activePost && typeof window !== 'undefined' && (window as any).fbq) {
+        (window as any).fbq('track', 'ViewContent', { 
+            content_name: activePost.title,
+            content_category: 'Blog Post',
+            content_ids: [activePost.id]
+        });
+    }
   }, [activePost]);
 
   if (activePost) {

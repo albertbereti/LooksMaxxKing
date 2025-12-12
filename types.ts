@@ -160,3 +160,11 @@ export enum AppState {
   ARTICLE = 'ARTICLE',
   COACH = 'COACH'
 }
+
+// === GLOBAL TYPES ===
+declare global {
+    interface Window {
+        fbq: (eventType: string, eventName: string, params?: any) => void;
+        _fbq: any;
+    }
+}

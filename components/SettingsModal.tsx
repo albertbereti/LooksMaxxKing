@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './Button';
 import { UserProfile } from '../types';
@@ -59,6 +58,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
       language, // Save language preference
     };
     saveUserProfile(profile);
+    
+    // Facebook Pixel: CompleteRegistration
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+        (window as any).fbq('track', 'CompleteRegistration', { 
+            content_name: 'User Profile Update' 
+        });
+    }
+
     setMessage({ text: "Profile updated successfully", type: 'success' });
     onDataChange();
     setTimeout(() => setMessage(null), 2000);

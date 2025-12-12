@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from './Button';
 import { CrownLogo } from './CrownLogo';
@@ -71,6 +70,16 @@ export const CoachDashboard: React.FC<CoachDashboardProps> = ({ onBack }) => {
 
     const handleSubscribe = () => {
         setLoading(true);
+
+        // Facebook Pixel: InitiateCheckout
+        if (typeof window !== 'undefined' && (window as any).fbq) {
+            (window as any).fbq('track', 'InitiateCheckout', { 
+                content_name: 'Coach Subscription',
+                value: 29.99,
+                currency: 'USD'
+            });
+        }
+
         // Stripe integration
         window.open(STRIPE_LINKS.COACH_SUBSCRIPTION, '_blank');
 

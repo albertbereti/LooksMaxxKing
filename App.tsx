@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AppState, LooksAnalysis, ScanHistoryItem } from './types';
 import { UserProvider, useUser } from './contexts/UserContext';
@@ -41,12 +40,36 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
-  // Track page views when state changes
+  // --- ANALYTICS TRACKING ---
+  
   useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).fbq) {
-        (window as any).fbq('track', 'PageView');
+    if (typeof window !== 'undefined' && window.fbq) {
+        // 1. Track Virtual PageView for every state change
+        // This allows seeing the funnel: /idle -> /camera -> /result
+        window.fbq('track', 'PageView', { page_path: `/${appState.toLowerCase()}` });
+
+        // 2. Track Specific Conversion Events
+        if (appState === AppState.CAMERA) {
+            // User is high-intent, they clicked "Start"
+            window.fbq('track', 'InitiateCheckout', { content_name: 'Started Scan' });
+        } 
+        else if (appState === AppState.RESULT && analysis) {
+            // User successfully got a result
+            window.fbq('track', 'ViewContent', { 
+                content_name: 'Analysis Result',
+                content_category: 'AI Scan',
+                value: analysis.overallScore,
+                currency: 'USD' // Optional, helps FB optimize for higher value users
+            });
+        }
+        else if (appState === AppState.COACH) {
+             window.fbq('track', 'Lead', { content_name: 'Viewed Coach Dashboard' });
+        }
+        else if (appState === AppState.BLOG) {
+             window.fbq('track', 'ViewContent', { content_name: 'Blog Library' });
+        }
     }
-  }, [appState]);
+  }, [appState, analysis]);
 
   const toggleTheme = () => {
       const newMode = !darkMode;

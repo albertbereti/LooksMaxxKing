@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { LooksAnalysis } from '../types';
 import { Button } from './Button';
@@ -99,6 +98,16 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysis, imageD
 
   const handleSimulatePayment = (type: 'premium' | 'credits') => {
       setProcessingPayment(true);
+      
+      // Facebook Pixel: InitiateCheckout
+      if (typeof window !== 'undefined' && (window as any).fbq) {
+          (window as any).fbq('track', 'InitiateCheckout', { 
+              content_name: type === 'premium' ? 'Premium Unlock' : 'Credits TopUp',
+              value: type === 'premium' ? PRICING.PREMIUM_LIFETIME : PRICING.CREDIT_PACK_PRICE,
+              currency: 'USD'
+          });
+      }
+
       const url = type === 'premium' ? STRIPE_LINKS.PREMIUM_UNLOCK : STRIPE_LINKS.CREDITS_TOPUP;
       window.open(url, '_blank');
       setTimeout(() => {

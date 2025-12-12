@@ -13,6 +13,7 @@ import { ProgressDashboard } from './components/ProgressDashboard';
 import { BlogSection } from './components/BlogSection';
 import { CoachDashboard } from './components/CoachDashboard';
 import { SettingsModal } from './components/SettingsModal';
+import { TerminologyPage } from './components/TerminologyPage';
 import { LoadingScreen } from './components/ui/LoadingScreen';
 
 const NOISE_BG = "data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.5'/%3E%3C/svg%3E";
@@ -43,30 +44,53 @@ const AppContent: React.FC = () => {
   // --- ANALYTICS TRACKING ---
   
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.fbq) {
-        // 1. Track Virtual PageView for every state change
-        // This allows seeing the funnel: /idle -> /camera -> /result
-        window.fbq('track', 'PageView', { page_path: `/${appState.toLowerCase()}` });
+    if (typeof window !== 'undefined') {
+        const virtualPath = `/${appState.toLowerCase()}`;
+        
+        // 1. Facebook Pixel PageView
+        if (window.fbq) {
+            window.fbq('track', 'PageView', { page_path: virtualPath });
+        }
 
-        // 2. Track Specific Conversion Events
+        // 2. Google Analytics (GA4) PageView
+        if (window.gtag) {
+             window.gtag('event', 'page_view', {
+                page_title: appState,
+                page_location: window.location.href + virtualPath
+             });
+        }
+
+        // 3. Track Specific Conversion Events
         if (appState === AppState.CAMERA) {
             // User is high-intent, they clicked "Start"
-            window.fbq('track', 'InitiateCheckout', { content_name: 'Started Scan' });
+            if (window.fbq) window.fbq('track', 'InitiateCheckout', { content_name: 'Started Scan' });
+            if (window.gtag) window.gtag('event', 'begin_checkout', { items: [{ item_name: 'AI Scan' }] });
         } 
         else if (appState === AppState.RESULT && analysis) {
             // User successfully got a result
-            window.fbq('track', 'ViewContent', { 
-                content_name: 'Analysis Result',
-                content_category: 'AI Scan',
-                value: analysis.overallScore,
-                currency: 'USD' // Optional, helps FB optimize for higher value users
-            });
+            if (window.fbq) {
+                window.fbq('track', 'ViewContent', { 
+                    content_name: 'Analysis Result',
+                    content_category: 'AI Scan',
+                    value: analysis.overallScore,
+                    currency: 'USD'
+                });
+            }
+            if (window.gtag) {
+                window.gtag('event', 'generate_lead', {
+                    value: analysis.overallScore,
+                    currency: 'USD'
+                });
+            }
         }
         else if (appState === AppState.COACH) {
-             window.fbq('track', 'Lead', { content_name: 'Viewed Coach Dashboard' });
+             if (window.fbq) window.fbq('track', 'Lead', { content_name: 'Viewed Coach Dashboard' });
         }
         else if (appState === AppState.BLOG) {
-             window.fbq('track', 'ViewContent', { content_name: 'Blog Library' });
+             if (window.fbq) window.fbq('track', 'ViewContent', { content_name: 'Blog Library' });
+        }
+        else if (appState === AppState.TERMINOLOGY) {
+             if (window.fbq) window.fbq('track', 'ViewContent', { content_name: 'Terminology Dictionary' });
         }
     }
   }, [appState, analysis]);
@@ -147,6 +171,8 @@ const AppContent: React.FC = () => {
               );
           case AppState.BLOG:
               return <BlogSection onBack={() => setAppState(AppState.IDLE)} />;
+          case AppState.TERMINOLOGY:
+              return <TerminologyPage onBack={() => setAppState(AppState.IDLE)} />;
           case AppState.COACH:
               return <CoachDashboard onBack={() => setAppState(AppState.IDLE)} />;
           default:

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CrownLogo } from './CrownLogo';
 import { useUser } from '../contexts/UserContext';
@@ -72,11 +71,13 @@ export const Layout: React.FC<LayoutProps> = ({
       <footer className="w-full max-w-7xl mx-auto px-6 py-8 border-t border-gray-200 dark:border-zinc-800 mt-auto text-center z-10 pb-safe">
           <div className="max-w-2xl mx-auto text-[10px] md:text-xs text-gray-500 dark:text-zinc-600 space-y-2 font-medium">
               <p>LooksMaxx King uses AI for aesthetic analysis. Results are for entertainment purposes only.</p>
-              <div className="pt-4 flex justify-center gap-4">
+              <div className="pt-4 flex justify-center gap-4 flex-wrap">
                   <button onClick={() => onNavigate(AppState.BLOG)} className="hover:text-amber-500 transition-colors">Knowledge Base</button>
-                  <span>•</span>
+                  <span className="opacity-30">•</span>
+                  <button onClick={() => onNavigate(AppState.TERMINOLOGY)} className="hover:text-amber-500 transition-colors">Glossary</button>
+                  <span className="opacity-30">•</span>
                   <span>Terms</span>
-                  <span>•</span>
+                  <span className="opacity-30">•</span>
                   <span>Privacy</span>
               </div>
               <p className="pt-2 opacity-50">© {new Date().getFullYear()} LooksMaxx King.</p>

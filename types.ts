@@ -158,7 +158,8 @@ export enum AppState {
   HISTORY = 'HISTORY',
   BLOG = 'BLOG',
   ARTICLE = 'ARTICLE',
-  COACH = 'COACH'
+  COACH = 'COACH',
+  TERMINOLOGY = 'TERMINOLOGY'
 }
 
 // === GLOBAL TYPES ===
@@ -166,5 +167,7 @@ declare global {
     interface Window {
         fbq: (eventType: string, eventName: string, params?: any) => void;
         _fbq: any;
+        gtag: (...args: any[]) => void;
+        dataLayer: any[];
     }
 }

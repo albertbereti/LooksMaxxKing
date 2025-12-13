@@ -41,18 +41,19 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
           throw new Error("Camera API not supported");
         }
 
-        // Attempt 1: HD User facing
+        // Attempt 1: Optimal Mobile Settings (Portrait optimized)
+        // We do NOT enforce exact width/height as this causes crashes on many Android devices
         try {
           stream = await navigator.mediaDevices.getUserMedia({
             video: { 
               facingMode: "user",
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-              aspectRatio: { ideal: 0.75 } // Portrait preferred
+              aspectRatio: { ideal: 0.75 }, // 3:4 Portrait Ratio preferred
+              frameRate: { ideal: 30 }
             }
           });
         } catch (err) {
-          // Attempt 2: Basic settings
+          // Attempt 2: Basic fallback (Any camera)
+          console.warn("Optimal camera failed, trying fallback...", err);
           try {
             stream = await navigator.mediaDevices.getUserMedia({ 
                 video: true 
@@ -71,6 +72,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
 
         if (videoRef.current && stream) {
           videoRef.current.srcObject = stream;
+          // Wait for video to be ready
           videoRef.current.onloadedmetadata = () => {
             if (mountedRef.current && videoRef.current) {
                 videoRef.current.play()
@@ -94,6 +96,8 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
             userMessage = "No camera found on this device.";
         } else if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
             userMessage = "Camera is in use by another app.";
+        } else if (errorName === 'OverconstrainedError') {
+            userMessage = "Camera does not support required resolution.";
         } else if (errorMessage === "Camera API not supported") {
             userMessage = "Camera not supported in this browser.";
         } else {
@@ -126,6 +130,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onCance
       
       const ctx = canvas.getContext('2d');
       if (ctx) {
+        // Mirror effect for selfie cam
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
         ctx.drawImage(video, 0, 0);

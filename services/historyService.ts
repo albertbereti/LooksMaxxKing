@@ -7,15 +7,19 @@ const USER_PROFILE_KEY = 'looksmax_user_profile_v2';
 // Migration helper
 const migrateOldData = () => {
     if (typeof window === 'undefined') return;
-    const oldHistory = localStorage.getItem('looksmax_scan_history_v1');
-    if (oldHistory && !localStorage.getItem(HISTORY_KEY)) {
-        localStorage.setItem(HISTORY_KEY, oldHistory);
-    }
-    const oldPremium = localStorage.getItem('looksmax_premium_unlocked');
-    if (oldPremium === 'true') {
-        const profile = getUserProfile() || createDefaultProfile();
-        profile.isPremium = true;
-        saveUserProfile(profile);
+    try {
+        const oldHistory = localStorage.getItem('looksmax_scan_history_v1');
+        if (oldHistory && !localStorage.getItem(HISTORY_KEY)) {
+            localStorage.setItem(HISTORY_KEY, oldHistory);
+        }
+        const oldPremium = localStorage.getItem('looksmax_premium_unlocked');
+        if (oldPremium === 'true') {
+            const profile = getUserProfile() || createDefaultProfile();
+            profile.isPremium = true;
+            saveUserProfile(profile);
+        }
+    } catch (e) {
+        console.warn("Migration skipped due to storage error");
     }
 }
 
@@ -39,33 +43,40 @@ const safeSave = (key: string, data: any) => {
     try {
         localStorage.setItem(key, JSON.stringify(data));
     } catch (e: any) {
-        if (e.name === 'QuotaExceededError' || e.code === 22) {
+        // Handle QuotaExceededError (code 22) or NS_ERROR_DOM_QUOTA_REACHED (Firefox)
+        if (e.name === 'QuotaExceededError' || e.code === 22 || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
             console.warn("Storage quota exceeded. Attempting to trim history...");
             
             // If we are trying to save history, trim it hard
             if (key === HISTORY_KEY && Array.isArray(data)) {
-                 const trimmed = data.slice(0, Math.max(1, data.length - 3)); // Remove 3 oldest
+                 // Keep only last 2 items
+                 const trimmed = data.slice(0, 2); 
                  try {
                      localStorage.setItem(key, JSON.stringify(trimmed));
                      return;
                  } catch (retryErr) {
-                     // Still full? Emergency mode.
                      console.error("Critical storage full. Saving only most recent.");
-                     localStorage.setItem(key, JSON.stringify([data[0]]));
+                     try {
+                         localStorage.setItem(key, JSON.stringify([data[0]]));
+                     } catch (final) {
+                         // Give up, user needs to clear data
+                         alert("Device storage full. History not saved.");
+                     }
                  }
             } else {
                 // If saving something else (like profile), try cleaning history to make space
                 try {
                     const currentHistory = getHistory();
-                    if (currentHistory.length > 2) {
-                        const shrunkHistory = currentHistory.slice(0, currentHistory.length - 2);
+                    if (currentHistory.length > 1) {
+                        const shrunkHistory = currentHistory.slice(0, 1); // keep only 1
                         localStorage.setItem(HISTORY_KEY, JSON.stringify(shrunkHistory));
                         // Try saving original data again
                         localStorage.setItem(key, JSON.stringify(data));
                     }
                 } catch (finalErr) {
                     console.error("Could not free space.", finalErr);
-                    alert("Storage full. Please export your data and clear history.");
+                    // Non-blocking alert
+                    console.warn("Storage full. Please export your data and clear history.");
                 }
             }
         }
@@ -111,38 +122,49 @@ export const getHistory = (): ScanHistoryItem[] => {
     return JSON.parse(stored);
   } catch (e) {
     console.error("Failed to load history", e);
+    // If corrupt, return empty but don't crash
     return [];
   }
 };
 
 export const saveScan = (analysis: LooksAnalysis): ScanHistoryItem[] => {
-  const currentHistory = getHistory();
-  
-  const newScan: ScanHistoryItem = {
-    id: Date.now().toString(),
-    date: new Date().toISOString(),
-    analysis: analysis,
-    assets: {}
-  };
+  try {
+      const currentHistory = getHistory();
+      
+      const newScan: ScanHistoryItem = {
+        id: Date.now().toString(),
+        date: new Date().toISOString(),
+        analysis: analysis,
+        assets: {}
+      };
 
-  const updatedHistory = [newScan, ...currentHistory].slice(0, 10); // Limit count
-  safeSave(HISTORY_KEY, updatedHistory);
+      // Limit to 10 items normally
+      const updatedHistory = [newScan, ...currentHistory].slice(0, 10); 
+      safeSave(HISTORY_KEY, updatedHistory);
 
-  // Return what was actually saved (re-read in case of trimming)
-  return getHistory(); 
+      // Return what was actually saved (re-read in case of trimming)
+      return getHistory(); 
+  } catch (e) {
+      console.error("Error saving scan", e);
+      return [];
+  }
 };
 
 // === ASSET REPOSITORY ===
 
 export const saveGeneratedAsset = (scanId: string, assetKey: string, base64Image: string) => {
-    const history = getHistory();
-    const scanIndex = history.findIndex(h => h.id === scanId);
-    
-    if (scanIndex !== -1) {
-        if (!history[scanIndex].assets) history[scanIndex].assets = {};
-        history[scanIndex].assets![assetKey] = base64Image;
+    try {
+        const history = getHistory();
+        const scanIndex = history.findIndex(h => h.id === scanId);
         
-        safeSave(HISTORY_KEY, history);
+        if (scanIndex !== -1) {
+            if (!history[scanIndex].assets) history[scanIndex].assets = {};
+            history[scanIndex].assets![assetKey] = base64Image;
+            
+            safeSave(HISTORY_KEY, history);
+        }
+    } catch (e) {
+        console.error("Failed to save asset", e);
     }
 };
 

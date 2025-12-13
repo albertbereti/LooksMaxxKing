@@ -62,7 +62,7 @@ const getUserLanguage = () => {
 async function callAnalysisModel(base64Data: string, model: string, prompts: any): Promise<LooksAnalysis> {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    // Config: 2.5 Flash is efficient. Flash Latest is the fallback.
+    // Config: 2.5 Flash is efficient. Flash Lite Latest is the fallback.
     const response = await retryWithBackoff<GenerateContentResponse>(() => ai.models.generateContent({
       model: model,
       contents: {
@@ -80,7 +80,18 @@ async function callAnalysisModel(base64Data: string, model: string, prompts: any
     }));
 
     if (!response.text) throw new Error("No response from AI");
-    return JSON.parse(response.text) as LooksAnalysis;
+    
+    // Safe parse
+    try {
+        return JSON.parse(response.text) as LooksAnalysis;
+    } catch (e) {
+        // Fallback for markdown code blocks if AI misbehaves
+        const match = response.text.match(/```json([\s\S]*?)```/);
+        if (match && match[1]) {
+            return JSON.parse(match[1]) as LooksAnalysis;
+        }
+        throw new Error("Invalid AI response format");
+    }
 }
 
 export const analyzeFace = async (base64Image: string): Promise<LooksAnalysis> => {
@@ -90,16 +101,16 @@ export const analyzeFace = async (base64Image: string): Promise<LooksAnalysis> =
     const prompts = getSystemPrompts(getUserLanguage());
 
     try {
-        // Attempt 1: Primary Model (High Quality)
+        // Attempt 1: Primary Model (Gemini 2.5 Flash)
         return await callAnalysisModel(base64Data, AI_MODELS.TEXT_ANALYSIS, prompts);
     } catch (error: any) {
-        // Fallback Strategy: If primary is overloaded, downgrade to Flash Latest to ensure service availability
+        // Fallback Strategy: If primary is overloaded, switch to Flash-Lite (High Availability)
         const isTrafficError = error.message?.includes("overloaded") || error.message?.includes("traffic") || error.message?.includes("unavailable") || error.status === 503;
         
         if (isTrafficError) {
-            console.warn("Primary model overloaded. Engaging backup model protocol...");
+            console.warn("Primary model overloaded. Engaging backup model protocol (Flash Lite)...");
             try {
-                 return await callAnalysisModel(base64Data, 'gemini-flash-latest', prompts);
+                 return await callAnalysisModel(base64Data, 'gemini-flash-lite-latest', prompts);
             } catch (fallbackError) {
                  throw new Error("AI servers are experiencing extremely high traffic. Please try again in 1-2 minutes.");
             }

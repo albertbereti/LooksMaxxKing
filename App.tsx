@@ -1,21 +1,24 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { AppState, LooksAnalysis, ScanHistoryItem } from './types';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { Layout } from './components/Layout';
 import { saveScan, getHistory } from './services/historyService';
 import { analyzeFace } from './services/geminiService';
 
-// Views
+// Core Views (Eager Load for First Paint)
 import { LandingPage } from './components/LandingPage';
 import { CameraCapture } from './components/CameraCapture';
-import { AnalysisResult } from './components/AnalysisResult';
-import { ProgressDashboard } from './components/ProgressDashboard';
-import { BlogSection } from './components/BlogSection';
-import { CoachDashboard } from './components/CoachDashboard';
 import { SettingsModal } from './components/SettingsModal';
-import { TerminologyPage } from './components/TerminologyPage';
 import { LoadingScreen } from './components/ui/LoadingScreen';
+
+// Heavy Views (Lazy Load for Performance)
+// This reduces the initial bundle size, making the app load faster globally
+const AnalysisResult = React.lazy(() => import('./components/AnalysisResult').then(module => ({ default: module.AnalysisResult })));
+const ProgressDashboard = React.lazy(() => import('./components/ProgressDashboard').then(module => ({ default: module.ProgressDashboard })));
+const BlogSection = React.lazy(() => import('./components/BlogSection').then(module => ({ default: module.BlogSection })));
+const CoachDashboard = React.lazy(() => import('./components/CoachDashboard').then(module => ({ default: module.CoachDashboard })));
+const TerminologyPage = React.lazy(() => import('./components/TerminologyPage').then(module => ({ default: module.TerminologyPage })));
 
 const NOISE_BG = "data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.5'/%3E%3C/svg%3E";
 
@@ -198,28 +201,44 @@ const AppContent: React.FC = () => {
               return <LoadingScreen />;
           case AppState.RESULT:
               return analysis ? (
-                  <AnalysisResult 
-                    analysis={analysis} 
-                    imageData={currentImage}
-                    onRetake={handleRetake}
-                    scanId={currentScanId}
-                    onOpenCoach={() => setAppState(AppState.COACH)}
-                  />
+                  <Suspense fallback={<LoadingScreen />}>
+                    <AnalysisResult 
+                        analysis={analysis} 
+                        imageData={currentImage}
+                        onRetake={handleRetake}
+                        scanId={currentScanId}
+                        onOpenCoach={() => setAppState(AppState.COACH)}
+                    />
+                  </Suspense>
               ) : null;
           case AppState.HISTORY:
               return (
-                  <ProgressDashboard 
-                    history={history} 
-                    onBack={() => setAppState(AppState.IDLE)} 
-                    onSelectScan={(item) => { setAnalysis(item); setCurrentImage(null); setAppState(AppState.RESULT); }}
-                  />
+                  <Suspense fallback={<LoadingScreen />}>
+                    <ProgressDashboard 
+                        history={history} 
+                        onBack={() => setAppState(AppState.IDLE)} 
+                        onSelectScan={(item) => { setAnalysis(item); setCurrentImage(null); setAppState(AppState.RESULT); }}
+                    />
+                  </Suspense>
               );
           case AppState.BLOG:
-              return <BlogSection onBack={() => setAppState(AppState.IDLE)} initialPostId={initialPostId} />;
+              return (
+                  <Suspense fallback={<LoadingScreen />}>
+                     <BlogSection onBack={() => setAppState(AppState.IDLE)} initialPostId={initialPostId} />
+                  </Suspense>
+              );
           case AppState.TERMINOLOGY:
-              return <TerminologyPage onBack={() => setAppState(AppState.IDLE)} initialTermId={initialTermId} />;
+              return (
+                  <Suspense fallback={<LoadingScreen />}>
+                    <TerminologyPage onBack={() => setAppState(AppState.IDLE)} initialTermId={initialTermId} />
+                  </Suspense>
+              );
           case AppState.COACH:
-              return <CoachDashboard onBack={() => setAppState(AppState.IDLE)} />;
+              return (
+                  <Suspense fallback={<LoadingScreen />}>
+                     <CoachDashboard onBack={() => setAppState(AppState.IDLE)} />
+                  </Suspense>
+              );
           default:
               return null;
       }

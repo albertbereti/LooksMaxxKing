@@ -1,6 +1,8 @@
 
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-import { LooksAnalysis } from "../types";
+
+
+import { GoogleGenAI, GenerateContentResponse, ChatSession } from "@google/genai";
+import { LooksAnalysis, ChatMessage } from "../types";
 import { ANALYSIS_SCHEMA } from "./analysisSchema";
 import { AI_MODELS } from "../config";
 import { getSystemPrompts } from "./prompts";
@@ -203,7 +205,12 @@ export const generateProcedureSimulation = async (base64Image: string, procedure
     }
 }
 
-export const analyzeProgressPhoto = async (base64Image: string): Promise<string> => {
+interface CoachPhotoAnalysis {
+    score: number;
+    feedback: string;
+}
+
+export const analyzeProgressPhoto = async (base64Image: string): Promise<CoachPhotoAnalysis> => {
     try {
         await ensureKey();
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -219,13 +226,53 @@ export const analyzeProgressPhoto = async (base64Image: string): Promise<string>
                 ]
              },
              config: {
-                systemInstruction: prompts.COACH_SYSTEM_INSTRUCTION
+                systemInstruction: prompts.COACH_SYSTEM_INSTRUCTION,
+                responseMimeType: "application/json" // Force JSON output
              }
         }));
+
+        if (!response.text) throw new Error("No response from Coach AI");
         
-        return response.text || "Analysis complete.";
+        try {
+            return JSON.parse(response.text) as CoachPhotoAnalysis;
+        } catch (e) {
+            // Fallback
+            return { score: 5, feedback: "Keep focused. Stay hydrated." };
+        }
     } catch (e) {
         console.error(e);
-        return "Could not analyze photo. Ensure lighting is clear.";
+        return { score: 0, feedback: "Analysis failed. Ensure good lighting." };
+    }
+}
+
+// Chat with Coach
+let chatSession: ChatSession | null = null;
+
+export const chatWithCoach = async (history: ChatMessage[], newMessage: string): Promise<string> => {
+    try {
+        await ensureKey();
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+        if (!chatSession) {
+             chatSession = ai.chats.create({
+                model: AI_MODELS.TEXT_ANALYSIS,
+                config: {
+                    systemInstruction: `You are the LooksMaxx King Coach. A tough, direct, but helpful aesthetics coach. 
+                    Your job is to explain protocols (diet, gym, grooming) simply (5th grade level).
+                    
+                    If asked about recipes:
+                    - Ninja Creami: Fairlife Milk + Whey Protein + Sugar Free Pudding Mix. Freeze 24h. Spin.
+                    - Protein Bowl: 96/4 Lean Beef, Air Fryer, White Onion, Pickles, Mustard, Hot Sauce.
+                    
+                    Keep answers concise (under 100 words). Be motivating.`,
+                }
+             });
+        }
+
+        const response = await chatSession.sendMessage({ message: newMessage });
+        return response.text || "Focus on the grind.";
+    } catch (e) {
+        console.error("Chat error", e);
+        return "The Coach is busy. Try again later.";
     }
 }

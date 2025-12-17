@@ -1,4 +1,5 @@
 
+
 // === CORE ANALYSIS TYPES ===
 
 export interface FeatureAnalysis {
@@ -47,6 +48,7 @@ export interface Milestone {
   label: string;
   week: number;
   description: string;
+  
 }
 
 export interface LooksAnalysis {
@@ -108,12 +110,23 @@ export interface UsageTracker {
     [category: string]: UsageRecord; 
 }
 
+export interface TaskProduct {
+    id: string;
+    name: string;
+    url: string; // Search query or direct link
+}
+
 export interface CoachTask {
     id: string;
     text: string;
     completed: boolean;
     category: 'HABIT' | 'GROOMING' | 'FITNESS' | 'DIET';
     section?: 'MORNING' | 'WORKOUT' | 'EVENING';
+    details?: {
+        why: string;
+        how: string;
+        products?: TaskProduct[];
+    }
 }
 
 export interface CoachPhoto {
@@ -121,12 +134,18 @@ export interface CoachPhoto {
     timestamp: string;
     imageUrl: string; // Base64
     feedback: string;
+    score?: number; // Daily looks score 1-10
 }
 
 export interface CoachDay {
     date: string;
     tasks: CoachTask[];
     photos?: CoachPhoto[];
+}
+
+export interface ChatMessage {
+    role: 'user' | 'model';
+    text: string;
 }
 
 export interface UserProfile {
@@ -147,6 +166,9 @@ export interface UserProfile {
   
   // Progress
   coachProgress?: CoachDay[];
+  
+  // Inventory (Items user already has)
+  inventory?: string[]; 
 }
 
 export enum AppState {

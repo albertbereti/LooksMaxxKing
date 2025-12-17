@@ -46,19 +46,23 @@ export const HardmaxxingSection: React.FC<HardmaxxingSectionProps> = ({
   return (
     <div className="bg-zinc-900 rounded-[2rem] overflow-hidden shadow-2xl border border-zinc-800 p-6 md:p-8 mt-6 relative">
         
-        {/* Paywall Overlay */}
+        {/* Glassmorphism Paywall Overlay */}
         {!isPremiumUnlocked && (
-            <div className="absolute inset-0 z-30 backdrop-blur-xl bg-black/40 flex flex-col items-center justify-center text-center p-6 cursor-pointer hover:bg-black/50 transition-colors" onClick={onUnlock}>
-                <div className="w-20 h-20 bg-zinc-800/80 rounded-full flex items-center justify-center border-2 border-amber-500 mb-6 shadow-[0_0_30px_rgba(245,158,11,0.3)]">
+            <div 
+                className="absolute inset-0 z-30 backdrop-blur-md bg-zinc-950/60 flex flex-col items-center justify-center text-center p-6 cursor-pointer transition-all duration-500 hover:backdrop-blur-[4px] hover:bg-zinc-950/50" 
+                onClick={onUnlock}
+            >
+                <div className="w-20 h-20 bg-zinc-800/80 backdrop-blur-xl rounded-full flex items-center justify-center border-2 border-amber-500 mb-6 shadow-[0_0_40px_rgba(245,158,11,0.4)] animate-pulse">
                     <LockIcon className="w-8 h-8 text-white" />
                 </div>
-                <h2 className="text-3xl font-black text-white uppercase mb-2">Surgical Protocol Locked</h2>
-                <p className="text-zinc-400 mb-8 max-w-md">Access advanced medical simulations, cost estimates, and risk analysis.</p>
-                <Button onClick={onUnlock} className="px-12 py-4 text-lg bg-amber-500 text-black hover:bg-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.5)]">Unlock Hardmaxxing - $17.99</Button>
+                <h2 className="text-3xl font-black text-white uppercase mb-2 tracking-tight drop-shadow-lg">Surgical Protocol Locked</h2>
+                <p className="text-zinc-200 font-medium mb-8 max-w-md drop-shadow-md">Access advanced medical simulations, cost estimates, and risk analysis.</p>
+                <Button onClick={onUnlock} className="px-12 py-4 text-lg bg-amber-500 text-black hover:bg-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.5)] border-none">Unlock Hardmaxxing - $17.99</Button>
             </div>
         )}
 
-        <div className={`transition-all duration-500 ${!isPremiumUnlocked ? 'blur-xl opacity-30 pointer-events-none' : ''}`}>
+        {/* Content Wrapper - Visible but inaccessible when locked */}
+        <div className={`transition-all duration-500 ${!isPremiumUnlocked ? 'pointer-events-none select-none' : ''}`}>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
                     <h3 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">

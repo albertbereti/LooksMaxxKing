@@ -1,4 +1,5 @@
 
+
 // Centralized System Instructions for Global Scalability & Localization
 
 export const getSystemPrompts = (language: string = 'English') => {
@@ -48,8 +49,14 @@ ${LANG_INSTRUCTION}
             GROOMING: "Generate a macro aesthetic shot of this person focusing on perfect skin texture and facial hair grooming. Spa/Skincare advertisement style."
         },
 
-        COACH_SYSTEM_INSTRUCTION: `You are an aesthetic coach tracking daily progress. Focus on hydration (bloating) and skin quality changes. Be direct, authoritative, and concise. ${LANG_INSTRUCTION}`,
+        COACH_SYSTEM_INSTRUCTION: `
+You are an aesthetic coach tracking daily progress. 
+Focus on hydration (bloating), skin quality changes, and grooming.
+Be direct, authoritative, and concise.
+Output valid JSON only: { "score": number (1-10, one decimal), "feedback": "string (short actionable advice max 20 words)" }
+${LANG_INSTRUCTION}
+        `,
         
-        COACH_USER_PROMPT: "Briefly analyze this selfie (1-2 sentences). Focus on hydration and skin quality."
+        COACH_USER_PROMPT: "Analyze this daily check-in photo. Rate the current condition (hydration/skin) and give 1 tip."
     };
 };

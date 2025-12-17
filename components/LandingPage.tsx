@@ -77,20 +77,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             <h1 className="text-[12vw] sm:text-7xl md:text-8xl lg:text-9xl font-black mb-6 leading-[0.9] tracking-tighter text-gray-900 dark:text-white">
-                SUBMIT TO <br/>
+                ASCEND TO <br/>
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-yellow-300 to-amber-600 drop-shadow-sm">
-                THE KING
+                ROYALTY
                 </span>
             </h1>
             
             <p className="text-base md:text-xl text-gray-600 dark:text-zinc-400 mb-10 max-w-xl md:max-w-2xl mx-auto leading-relaxed font-light px-4">
-                The world's most ruthless aesthetic intelligence. <br/>
-                Seek judgement, identify your flaws, and receive the <span className="text-gray-900 dark:text-white font-semibold border-b-2 border-amber-500">Royal Protocol</span> to ascend.
+                The world's most advanced aesthetic intelligence. <br/>
+                Unlock your potential, optimize your features, and receive the <span className="text-gray-900 dark:text-white font-semibold border-b-2 border-amber-500">Royal Protocol</span> to ascend.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-sm sm:max-w-none relative z-20">
                 <Button onClick={onStart} variant="primary" className="w-full sm:w-auto text-base md:text-lg px-8 md:px-12 py-4 shadow-xl shadow-amber-500/20 hover:shadow-amber-500/30">
-                    {userProfile ? 'Seek Judgement' : 'Request Audience'}
+                    {userProfile ? 'Begin Ascension' : 'Start Analysis'}
                 </Button>
                 {!userProfile && (
                     <Button onClick={onOpenSettings} variant="outline" className="w-full sm:w-auto text-base md:text-lg px-8 md:px-12 py-4">
@@ -107,7 +107,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className="mt-16 flex items-center gap-6 opacity-50 grayscale hover:grayscale-0 transition-all duration-500 hover:opacity-100">
                 <div className="h-px w-8 md:w-12 bg-gray-300 dark:bg-zinc-800"></div>
                 <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 dark:text-zinc-500 font-bold">
-                    Will you be crowned or conquered?
+                    Every King starts somewhere.
                 </p>
                 <div className="h-px w-8 md:w-12 bg-gray-300 dark:bg-zinc-800"></div>
             </div>

@@ -1,3 +1,4 @@
+
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 interface ErrorBoundaryProps {
@@ -9,11 +10,19 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
+/**
+ * ErrorBoundary catches JavaScript errors anywhere in their child component tree,
+ * logs those errors, and displays a fallback UI instead of the component tree that crashed.
+ */
+// Fix: Use the imported Component class directly and initialize state in constructor to ensure inherited members are correctly recognized by the compiler.
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  public state: ErrorBoundaryState = {
-    hasError: false,
-    error: null
-  };
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null
+    };
+  }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
@@ -35,7 +44,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   render() {
-    if (this.state.hasError) {
+    // Accessing props and state correctly from the base Component class.
+    const { children } = this.props;
+    const { hasError, error } = this.state;
+
+    if (hasError) {
       return (
         <div className="min-h-screen bg-[#09090b] text-white flex flex-col items-center justify-center p-6 text-center font-sans">
             <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mb-6 border border-red-500/20 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
@@ -63,15 +76,15 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 </button>
             </div>
 
-            {this.state.error && (
+            {error && (
                 <div className="mt-8 p-4 bg-black/50 rounded-lg text-left max-w-lg w-full overflow-auto max-h-40 border border-zinc-800">
-                    <p className="text-[10px] font-mono text-zinc-500 break-words">Error Details: {this.state.error.toString()}</p>
+                    <p className="text-[10px] font-mono text-zinc-500 break-words">Error Details: {error.toString()}</p>
                 </div>
             )}
         </div>
       );
     }
 
-    return this.props.children;
+    return children;
   }
 }

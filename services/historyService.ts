@@ -1,303 +1,154 @@
-
 import { LooksAnalysis, ScanHistoryItem, UserProfile } from "../types";
 
 const HISTORY_KEY = 'looksmax_scan_history_v2';
 const USER_PROFILE_KEY = 'looksmax_user_profile_v2';
 
-// Migration helper
-const migrateOldData = () => {
-    if (typeof window === 'undefined') return;
-    try {
-        const oldHistory = localStorage.getItem('looksmax_scan_history_v1');
-        if (oldHistory && !localStorage.getItem(HISTORY_KEY)) {
-            localStorage.setItem(HISTORY_KEY, oldHistory);
-        }
-        const oldPremium = localStorage.getItem('looksmax_premium_unlocked');
-        if (oldPremium === 'true') {
-            const profile = getUserProfile() || createDefaultProfile();
-            profile.isPremium = true;
-            saveUserProfile(profile);
-        }
-    } catch (e) {
-        console.warn("Migration skipped due to storage error");
-    }
-}
-
-// Initializer
-if (typeof window !== 'undefined') migrateOldData();
+const generateReferralCode = () => {
+    return 'KING-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+};
 
 const createDefaultProfile = (): UserProfile => ({
     name: 'Guest',
     joinedDate: new Date().toISOString(),
-    // Detect browser language or default to English
     language: typeof navigator !== 'undefined' && navigator.language ? navigator.language : 'English',
     isPremium: false,
     isCoach: false,
     usage: {},
-    credits: 0,
-    coachProgress: []
-});
-
-// Helper for Safe Saving with Quota Management
-const safeSave = (key: string, data: any) => {
-    try {
-        localStorage.setItem(key, JSON.stringify(data));
-    } catch (e: any) {
-        // Handle QuotaExceededError (code 22) or NS_ERROR_DOM_QUOTA_REACHED (Firefox)
-        if (e.name === 'QuotaExceededError' || e.code === 22 || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
-            console.warn("Storage quota exceeded. Attempting to trim history...");
-            
-            // If we are trying to save history, trim it hard
-            if (key === HISTORY_KEY && Array.isArray(data)) {
-                 // Keep only last 2 items
-                 const trimmed = data.slice(0, 2); 
-                 try {
-                     localStorage.setItem(key, JSON.stringify(trimmed));
-                     return;
-                 } catch (retryErr) {
-                     console.error("Critical storage full. Saving only most recent.");
-                     try {
-                         localStorage.setItem(key, JSON.stringify([data[0]]));
-                     } catch (final) {
-                         // Give up, user needs to clear data
-                         alert("Device storage full. History not saved.");
-                     }
-                 }
-            } else {
-                // If saving something else (like profile), try cleaning history to make space
-                try {
-                    const currentHistory = getHistory();
-                    if (currentHistory.length > 1) {
-                        const shrunkHistory = currentHistory.slice(0, 1); // keep only 1
-                        localStorage.setItem(HISTORY_KEY, JSON.stringify(shrunkHistory));
-                        // Try saving original data again
-                        localStorage.setItem(key, JSON.stringify(data));
-                    }
-                } catch (finalErr) {
-                    console.error("Could not free space.", finalErr);
-                    // Non-blocking alert
-                    console.warn("Storage full. Please export your data and clear history.");
-                }
-            }
-        }
+    credits: 1,
+    referralCode: generateReferralCode(),
+    inviteCount: 0,
+    coachProgress: [],
+    streak: 0,
+    notifications: {
+        smsEnabled: false,
+        emailEnabled: false,
+        morningReminder: true,
+        eveningReminder: true
     }
-}
-
-// === USER REPOSITORY ===
+});
 
 export const getUserProfile = (): UserProfile | null => {
   if (typeof window === 'undefined') return null;
   try {
     const stored = localStorage.getItem(USER_PROFILE_KEY);
-    return stored ? JSON.parse(stored) : createDefaultProfile();
+    const profile = stored ? JSON.parse(stored) : createDefaultProfile();
+    
+    // Migration for existing users
+    if (!profile.streak && profile.streak !== 0) profile.streak = 0;
+    if (!profile.notifications) profile.notifications = createDefaultProfile().notifications;
+    
+    return profile;
   } catch (e) {
     return createDefaultProfile();
   }
 };
 
 export const saveUserProfile = (profile: UserProfile) => {
-  safeSave(USER_PROFILE_KEY, profile);
+    try {
+        localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
+    } catch (e) {
+        console.error("Failed to save profile", e);
+    }
 };
 
-export const unlockPremium = () => {
-    const profile = getUserProfile() || createDefaultProfile();
-    profile.isPremium = true;
+export const applyReferralCode = (code: string): { success: boolean, message: string } => {
+    const profile = getUserProfile();
+    if (!profile) return { success: false, message: "Profile error." };
+    if (profile.referredBy) return { success: false, message: "You have already used a referral code." };
+    const cleanCode = code.trim().toUpperCase();
+    if (cleanCode === profile.referralCode) return { success: false, message: "You cannot use your own code." };
+    if (!cleanCode.startsWith('KING-') || cleanCode.length < 10) return { success: false, message: "Invalid referral code format." };
+    profile.referredBy = cleanCode;
+    profile.credits += 2;
     saveUserProfile(profile);
+    return { success: true, message: "Code applied! 2 Royal Credits added." };
 };
 
-export const unlockCoach = () => {
-    const profile = getUserProfile() || createDefaultProfile();
-    profile.isCoach = true;
-    saveUserProfile(profile);
+export const simulateInviteAccepted = () => {
+    const profile = getUserProfile();
+    if (profile) {
+        profile.inviteCount += 1;
+        profile.credits += 1;
+        saveUserProfile(profile);
+    }
 };
-
-// === HISTORY REPOSITORY ===
 
 export const getHistory = (): ScanHistoryItem[] => {
   if (typeof window === 'undefined') return [];
-  
   try {
     const stored = localStorage.getItem(HISTORY_KEY);
-    if (!stored) return [];
-    return JSON.parse(stored);
-  } catch (e) {
-    console.error("Failed to load history", e);
-    // If corrupt, return empty but don't crash
-    return [];
-  }
+    return stored ? JSON.parse(stored) : [];
+  } catch (e) { return []; }
 };
 
 export const saveScan = (analysis: LooksAnalysis): ScanHistoryItem[] => {
-  try {
-      const currentHistory = getHistory();
-      
-      const newScan: ScanHistoryItem = {
-        id: Date.now().toString(),
-        date: new Date().toISOString(),
-        analysis: analysis,
-        assets: {}
-      };
-
-      // Limit to 10 items normally
-      const updatedHistory = [newScan, ...currentHistory].slice(0, 10); 
-      safeSave(HISTORY_KEY, updatedHistory);
-
-      // Return what was actually saved (re-read in case of trimming)
-      return getHistory(); 
-  } catch (e) {
-      console.error("Error saving scan", e);
-      return [];
-  }
-};
-
-// === ASSET REPOSITORY ===
-
-export const saveGeneratedAsset = (scanId: string, assetKey: string, base64Image: string) => {
-    try {
-        const history = getHistory();
-        const scanIndex = history.findIndex(h => h.id === scanId);
-        
-        if (scanIndex !== -1) {
-            if (!history[scanIndex].assets) history[scanIndex].assets = {};
-            history[scanIndex].assets![assetKey] = base64Image;
-            
-            safeSave(HISTORY_KEY, history);
-        }
-    } catch (e) {
-        console.error("Failed to save asset", e);
-    }
-};
-
-// === QUOTA LOGIC (Business Logic coupled to User Profile) ===
-
-export const checkCanGenerate = (category: string): { allowed: boolean; reason?: 'limit' | 'premium_lock' } => {
-    const profile = getUserProfile();
-    if (!profile) return { allowed: false };
-
-    // Check Monthly Limit (5)
-    const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
-    
-    const record = profile.usage[category] || { count: 0, lastReset: currentMonth };
-    
-    // Reset if new month
-    if (record.lastReset !== currentMonth) {
-        record.count = 0;
-        record.lastReset = currentMonth;
-        profile.usage[category] = record;
-        saveUserProfile(profile);
-    }
-
-    if (record.count < 5) {
-        return { allowed: true };
-    }
-
-    // Check Credits
-    if (profile.credits > 0) {
-        return { allowed: true };
-    }
-
-    return { allowed: false, reason: 'limit' };
-};
-
-export const incrementUsage = (category: string) => {
-    const profile = getUserProfile();
-    if (!profile) return;
-
-    const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
-    
-    let record = profile.usage[category];
-    if (!record || record.lastReset !== currentMonth) {
-        record = { count: 0, lastReset: currentMonth };
-    }
-
-    if (record.count < 5) {
-        record.count++;
-    } else if (profile.credits > 0) {
-        profile.credits--;
-    }
-    
-    profile.usage[category] = record;
-    saveUserProfile(profile);
-};
-
-export const addCredits = (amount: number) => {
-    const profile = getUserProfile();
-    if (profile) {
-        profile.credits = (profile.credits || 0) + amount;
-        saveUserProfile(profile);
-    }
-};
-
-// === DATA MANGEMENT & ANALYTICS ===
-
-export const clearHistory = () => {
-  try {
-    localStorage.removeItem(HISTORY_KEY);
-    localStorage.removeItem(USER_PROFILE_KEY);
-  } catch (e) {
-    console.error("Failed to clear history", e);
-  }
+  const history = getHistory();
+  const newItem: ScanHistoryItem = {
+    id: Math.random().toString(36).substring(2, 9),
+    date: new Date().toISOString(),
+    analysis
+  };
+  const updated = [newItem, ...history].slice(0, 50);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+  return updated;
 };
 
 export const getProgressStats = (history: ScanHistoryItem[]) => {
-    if (history.length === 0) return { startingScore: 0, currentScore: 0, growth: 0, daysTracking: 0 };
-
-    // Sort oldest to newest
-    const sorted = [...history].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    
-    const start = sorted[0];
-    const current = sorted[sorted.length - 1];
-    
-    const startingScore = start.analysis.overallScore;
-    const currentScore = current.analysis.overallScore;
-    const growth = parseFloat((currentScore - startingScore).toFixed(1));
-    
-    // Calculate days
-    const startTime = new Date(start.date).getTime();
-    const lastScanTime = new Date(current.date).getTime();
-    const daysTracking = Math.max(1, Math.ceil((lastScanTime - startTime) / (1000 * 60 * 60 * 24)));
-
-    return {
-        startingScore,
-        currentScore,
-        growth,
-        daysTracking
-    };
+  if (history.length === 0) return null;
+  const current = history[0].analysis.overallScore;
+  const starting = history[history.length - 1].analysis.overallScore;
+  const firstDate = new Date(history[history.length - 1].date);
+  const diffDays = Math.ceil((new Date().getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
+  return { startingScore: starting, currentScore: current, growth: current - starting, daysTracking: Math.max(1, diffDays) };
 };
 
 export const handleExportDownload = () => {
-    if (typeof window === 'undefined') return;
-    
-    const exportData = {
-        history: getHistory(),
-        profile: getUserProfile(),
-        timestamp: new Date().toISOString(),
-        version: '1.0'
-    };
-    
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "looksmax_data.json");
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
+  const data = { profile: getUserProfile(), history: getHistory() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `looksmaxx-data-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
 };
 
-export const importData = (jsonContent: string): boolean => {
-    try {
-        const data = JSON.parse(jsonContent);
-        if (data.history && Array.isArray(data.history)) {
-            safeSave(HISTORY_KEY, data.history);
-        }
-        if (data.profile) {
-            safeSave(USER_PROFILE_KEY, data.profile);
-        }
-        return true;
-    } catch (e) {
-        console.error("Import failed", e);
-        return false;
+export const importData = (content: string): boolean => {
+  try {
+    const data = JSON.parse(content);
+    if (data.profile) saveUserProfile(data.profile);
+    if (data.history) localStorage.setItem(HISTORY_KEY, JSON.stringify(data.history));
+    return true;
+  } catch (e) { return false; }
+};
+
+export const clearHistory = () => {
+  localStorage.removeItem(HISTORY_KEY);
+  localStorage.removeItem(USER_PROFILE_KEY);
+};
+
+export const unlockCoach = () => {
+  const profile = getUserProfile();
+  if (profile) {
+    profile.isCoach = true;
+    saveUserProfile(profile);
+  }
+};
+
+export const addCredits = (amount: number) => {
+  const profile = getUserProfile();
+  if (profile) {
+    profile.credits += amount;
+    saveUserProfile(profile);
+  }
+};
+
+export const saveGeneratedAsset = (scanId: string, assetKey: string, assetUrl: string) => {
+  const history = getHistory();
+  const updatedHistory = history.map(item => {
+    if (item.id === scanId) {
+      return { ...item, assets: { ...(item.assets || {}), [assetKey]: assetUrl } };
     }
+    return item;
+  });
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(updatedHistory));
 };

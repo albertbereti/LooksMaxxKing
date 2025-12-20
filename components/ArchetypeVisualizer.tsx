@@ -10,11 +10,11 @@ const LockIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) =
 );
 
 interface ArchetypeVisualizerProps {
-    activeArchetype: 'prime' | 'titan' | 'icon';
+    activeArchetype: 'softmax' | 'hardmaxx' | 'titan' | 'icon';
     isPremiumUnlocked: boolean;
     isGenerating: boolean;
     currentImage: string | undefined;
-    onGenerate: (type: 'prime' | 'titan' | 'icon') => void;
+    onGenerate: (type: 'softmax' | 'hardmaxx' | 'titan' | 'icon') => void;
     onTriggerPaywall: () => void;
     onFullScreen: (img: string) => void;
     loadingMessage: string;
@@ -35,27 +35,27 @@ export const ArchetypeVisualizer: React.FC<ArchetypeVisualizerProps> = ({
             <div className="p-6 md:p-8 relative z-10">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
                 <div>
-                    <h3 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
-                        <span className="text-amber-500">///</span> ROYAL VISION
+                    <h3 className="text-2xl font-black text-white tracking-tight flex items-center gap-2 uppercase italic">
+                        <span className="text-amber-500">///</span> Genetic Visualization
                     </h3>
-                    <p className="text-zinc-400 text-sm">Visualize your ascension across 3 distinct archetypes.</p>
+                    <p className="text-zinc-400 text-sm">Compare your Softmaxx potential vs. Full Reconstruction.</p>
                 </div>
                 
-                <div className="flex gap-2 p-1 bg-zinc-900/80 rounded-xl border border-zinc-800">
-                    {(['prime', 'titan', 'icon'] as const).map((arch) => {
-                        const isLocked = arch === 'icon' && !isPremiumUnlocked;
+                <div className="flex gap-1 p-1 bg-zinc-900/80 rounded-xl border border-zinc-800 overflow-x-auto no-scrollbar max-w-full">
+                    {(['softmax', 'hardmaxx', 'titan', 'icon'] as const).map((arch) => {
+                        const isLocked = (arch === 'hardmaxx' || arch === 'icon') && !isPremiumUnlocked;
                         return (
                             <button
                                 key={arch}
                                 onClick={() => onGenerate(arch)}
-                                className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+                                className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap ${
                                     activeArchetype === arch 
                                     ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' 
                                     : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
                                 }`}
                             >
                                 {isLocked && <LockIcon className="w-3 h-3" />}
-                                {arch}
+                                {arch === 'softmax' ? 'Soft' : arch === 'hardmaxx' ? 'Hard' : arch}
                             </button>
                         )
                     })}
@@ -76,21 +76,22 @@ export const ArchetypeVisualizer: React.FC<ArchetypeVisualizerProps> = ({
                         {isGenerating ? (
                             <div className="z-10 flex flex-col items-center">
                                 <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                                <span className="text-amber-500 font-mono text-sm animate-pulse">{loadingMessage}</span>
+                                <span className="text-amber-500 font-mono text-sm animate-pulse uppercase tracking-widest">{loadingMessage}</span>
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full w-full">
-                                {activeArchetype === 'icon' && !isPremiumUnlocked ? (
-                                    <div className="text-center cursor-pointer" onClick={onTriggerPaywall}>
+                                {((activeArchetype === 'icon' || activeArchetype === 'hardmaxx') && !isPremiumUnlocked) ? (
+                                    <div className="text-center cursor-pointer p-6" onClick={onTriggerPaywall}>
                                         <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-700">
                                             <LockIcon className="w-8 h-8 text-amber-500" />
                                         </div>
-                                        <h4 className="text-white font-bold text-lg mb-2">ICON Archetype Locked</h4>
-                                        <Button className="text-xs px-6">Unlock Access</Button>
+                                        <h4 className="text-white font-black text-xl mb-2 uppercase italic tracking-tighter">Ascension Path Locked</h4>
+                                        <p className="text-zinc-400 text-sm mb-6">Structural reconstruction simulations require the Royal Pass.</p>
+                                        <Button className="text-xs px-10 bg-amber-500 text-black border-none">Unlock Path</Button>
                                     </div>
                                 ) : (
-                                    <Button onClick={() => onGenerate(activeArchetype)} variant="secondary">
-                                        Generate {activeArchetype}
+                                    <Button onClick={() => onGenerate(activeArchetype)} variant="secondary" className="px-10 py-4 uppercase font-black italic tracking-widest">
+                                        Visualize {activeArchetype === 'softmax' ? 'Softmaxx' : 'Hardmaxx'} Ascension
                                     </Button>
                                 )}
                             </div>
@@ -98,12 +99,15 @@ export const ArchetypeVisualizer: React.FC<ArchetypeVisualizerProps> = ({
                     </div>
                 )}
                  {currentImage && (
-                    <div className="absolute bottom-4 right-4 pointer-events-auto">
+                    <div className="absolute bottom-4 right-4 pointer-events-auto flex gap-2">
+                        <div className="bg-black/80 backdrop-blur-md border border-white/20 text-[10px] text-white px-3 py-1.5 rounded-lg font-black uppercase italic">
+                            {activeArchetype} Simulation
+                        </div>
                         <button 
                             onClick={() => downloadImage(currentImage, `looksmax-${activeArchetype}.png`)}
-                            className="p-2 bg-white text-black rounded-lg font-bold text-xs uppercase hover:bg-gray-200 transition-colors"
+                            className="p-1.5 bg-white text-black rounded-lg hover:bg-gray-200 transition-colors"
                         >
-                            Download
+                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0L8 8m4-4v12" /></svg>
                         </button>
                     </div>
                  )}

@@ -1,30 +1,40 @@
+export enum AppState {
+  IDLE = 'IDLE',
+  CAMERA = 'CAMERA',
+  ANALYZING = 'ANALYZING',
+  RESULT = 'RESULT',
+  HISTORY = 'HISTORY',
+  BLOG = 'BLOG',
+  TERMINOLOGY = 'TERMINOLOGY',
+  COACH = 'COACH'
+}
 
+export interface UsageRecord {
+  count: number;
+  lastReset: string;
+}
 
-// === CORE ANALYSIS TYPES ===
-
-export interface FeatureAnalysis {
-  feature: string;
-  score: number;
-  comment: string;
+export interface UsageTracker {
+  [category: string]: UsageRecord;
 }
 
 export interface ProductRecommendation {
+  id: string;
   name: string;
-  reason: string;
-  searchQuery: string;
-  tag?: string; // Optional tag for UI grouping (e.g. "SKIN", "HAIR")
+  url: string;
+  reason?: string;
+  searchQuery?: string;
+  tag?: string;
 }
 
-export interface ImprovementTip {
-  title: string;
-  description: string;
-  priority: 'High' | 'Medium' | 'Low';
-  category: 'Health' | 'Grooming' | 'Fitness' | 'Aesthetics';
-  stepByStep: string[];
+export interface SubAnalysis {
+  score: number;
+  summary: string;
   products: ProductRecommendation[];
+  shape?: string;
 }
 
-export interface MedicalProcedure {
+export interface HardmaxxingProcedure {
   name: string;
   type: 'Surgical' | 'Non-Surgical' | 'Dental';
   costEstimate: string;
@@ -35,162 +45,137 @@ export interface MedicalProcedure {
   expectedResult: string;
 }
 
-// === SUB-ANALYSIS TYPES ===
-
-export interface SubAnalysis {
-  score: number;
-  summary: string;
-  products: ProductRecommendation[];
-  shape?: string; // Specific to hairline
-}
-
 export interface Milestone {
   label: string;
   week: number;
   description: string;
-  
+}
+
+export interface FeatureScore {
+  feature: string;
+  score: number;
+  comment: string;
+}
+
+export interface Improvement {
+  title: string;
+  description: string;
+  priority: 'High' | 'Medium' | 'Low';
+  category: 'Health' | 'Grooming' | 'Fitness' | 'Aesthetics';
+  stepByStep: string[];
+  products: ProductRecommendation[];
 }
 
 export interface LooksAnalysis {
   overallScore: number;
   potentialScore: number;
   summary: string;
+  estimatedDaysToPotential: number;
+  milestones: Milestone[];
   bestFeature: string;
   weaknesses: string[];
-  features: FeatureAnalysis[];
-  improvements: ImprovementTip[];
-  hardmaxxing: MedicalProcedure[];
-  
-  // Specific Areas
   skinAnalysis: SubAnalysis;
   eyeAnalysis: SubAnalysis;
   hydrationAnalysis: SubAnalysis;
   beardAnalysis: SubAnalysis;
   earAnalysis: SubAnalysis;
   hairAnalysis: SubAnalysis;
-  hairlineAnalysis?: SubAnalysis; 
-  
-  estimatedDaysToPotential: number;
-  milestones: Milestone[];
-}
-
-// === PERSISTENCE & HISTORY ===
-
-export interface GeneratedAssets {
-    [key: string]: string; // Map of category/id -> base64 image
+  hairlineAnalysis: SubAnalysis;
+  hardmaxxing: HardmaxxingProcedure[];
+  features: FeatureScore[];
+  improvements: Improvement[];
 }
 
 export interface ScanHistoryItem {
   id: string;
-  date: string; // ISO String
+  date: string;
   analysis: LooksAnalysis;
-  assets?: GeneratedAssets;
+  assets?: { [key: string]: string };
 }
-
-// === BLOG & CONTENT ===
 
 export interface BlogPost {
   id: string;
   slug: string;
   title: string;
-  excerpt: string;
-  content: string; // HTML string
-  keywords: string[];
   publishDate: string;
-}
-
-// === USER & SUBSCRIPTION ===
-
-export interface UsageRecord {
-    count: number;
-    lastReset: string; // ISO Date (YYYY-MM)
-}
-
-export interface UsageTracker {
-    [category: string]: UsageRecord; 
-}
-
-export interface TaskProduct {
-    id: string;
-    name: string;
-    url: string; // Search query or direct link
-}
-
-export interface CoachTask {
-    id: string;
-    text: string;
-    completed: boolean;
-    category: 'HABIT' | 'GROOMING' | 'FITNESS' | 'DIET';
-    section?: 'MORNING' | 'WORKOUT' | 'EVENING';
-    details?: {
-        why: string;
-        how: string;
-        products?: TaskProduct[];
-    }
-}
-
-export interface CoachPhoto {
-    id: string;
-    timestamp: string;
-    imageUrl: string; // Base64
-    feedback: string;
-    score?: number; // Daily looks score 1-10
-}
-
-export interface CoachDay {
-    date: string;
-    tasks: CoachTask[];
-    photos?: CoachPhoto[];
+  keywords: string[];
+  excerpt: string;
+  content: string;
 }
 
 export interface ChatMessage {
-    role: 'user' | 'model';
-    text: string;
+  role: 'user' | 'model';
+  text: string;
+}
+
+export interface CoachPhoto {
+  id: string;
+  timestamp: string;
+  imageUrl: string;
+  feedback: string;
+  score: number;
+}
+
+export interface CoachTask {
+  id: string;
+  text: string;
+  completed: boolean;
+  category: string;
+  section: 'MORNING' | 'WORKOUT' | 'EVENING';
+  details?: {
+    why: string;
+    how: string;
+    products?: ProductRecommendation[];
+  };
+}
+
+export interface CoachDay {
+  date: string;
+  tasks: CoachTask[];
+  photos?: CoachPhoto[];
+}
+
+export interface NotificationSettings {
+  smsEnabled: boolean;
+  emailEnabled: boolean;
+  morningReminder: boolean;
+  eveningReminder: boolean;
+  phoneNumber?: string;
+  emailAddress?: string;
 }
 
 export interface UserProfile {
   name: string;
   email?: string;
   joinedDate: string;
-  
-  // Preferences
-  language: string; // e.g. 'en', 'es', 'fr'
-
-  // Status
+  language: string;
   isPremium: boolean;
   isCoach: boolean;
-  
-  // Limits
   usage: UsageTracker;
   credits: number;
-  
-  // Progress
+  referralCode: string;
+  referredBy?: string;
+  inviteCount: number;
   coachProgress?: CoachDay[];
-  
-  // Inventory (Items user already has)
   inventory?: string[]; 
+  streak: number;
+  lastActiveDate?: string;
+  notifications: NotificationSettings;
 }
 
-export enum AppState {
-  IDLE = 'IDLE',
-  CAMERA = 'CAMERA',
-  ANALYZING = 'ANALYZING',
-  RESULT = 'RESULT',
-  ERROR = 'ERROR',
-  HISTORY = 'HISTORY',
-  BLOG = 'BLOG',
-  ARTICLE = 'ARTICLE',
-  COACH = 'COACH',
-  TERMINOLOGY = 'TERMINOLOGY'
-}
-
-// === GLOBAL TYPES ===
 declare global {
-    interface Window {
-        fbq: (eventType: string, eventName: string, params?: any) => void;
-        _fbq: any;
-        gtag: (...args: any[]) => void;
-        dataLayer: any[];
-        ttq: any; // TikTok Pixel
-    }
+  interface AIStudio {
+    hasSelectedApiKey: () => Promise<boolean>;
+    openSelectKey: () => Promise<void>;
+  }
+
+  interface Window {
+    fbq?: (...args: any[]) => void;
+    gtag?: (...args: any[]) => void;
+    ttq?: {
+      page: () => void;
+      track: (event: string, data?: any) => void;
+    };
+    aistudio?: AIStudio;
+  }
 }

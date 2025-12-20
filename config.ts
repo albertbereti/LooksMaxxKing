@@ -8,7 +8,7 @@ export const APP_VERSION = "2.1.0";
 
 // Google Gemini Models
 export const AI_MODELS = {
-    TEXT_ANALYSIS: "gemini-2.5-flash",
+    TEXT_ANALYSIS: "gemini-3-flash-preview",
     IMAGE_GENERATION: "gemini-3-pro-image-preview",
 };
 

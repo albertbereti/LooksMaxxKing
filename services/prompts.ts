@@ -1,5 +1,3 @@
-
-
 // Centralized System Instructions for Global Scalability & Localization
 
 export const getSystemPrompts = (language: string = 'English') => {
@@ -28,7 +26,8 @@ Analyze:
 5. Hair/Beard/Hairline status.
 
 HARDMAXXING SECTION (The Royal Surgery):
-Identify 3-5 specific medical interventions. Explain the anatomy like a surgeon.
+IDENTIFY ALL POSSIBLE medical interventions. Do not limit the list. If the subject needs 10 procedures to reach a 10/10, list all 10. 
+Explain the anatomy like a surgeon. Do not hold back. Categorize them accurately.
 
 Output strict JSON matching the schema.
 ${LANG_INSTRUCTION}
@@ -38,7 +37,8 @@ ${LANG_INSTRUCTION}
         ANALYSIS_USER_PROMPT: `Analyze the attached face image. Provide a comprehensive aesthetic analysis including scores, detailed feedback on features, and specific improvement advice. Return the response in strict JSON format matching the provided schema.`,
 
         IMAGE_GENERATION: {
-            PRIME: "Generate a hyper-realistic 8k photo of this person transformed into their peak aesthetic potential ('prime' archetype). Focus on facial structure, defined jawline, clear skin, perfect symmetry. Retain identity but maximize facial aesthetics.",
+            SOFTMAXX: "Generate a hyper-realistic 8k photo of this person after a 6-month 'Softmaxxing' peak. NO BONE CHANGES. Improvements: Perfectly clear glowing skin, maximum de-bloating (low body fat facial definition), ideal stylish haircut for face shape, groomed dense eyebrows, and optimized lighting. This is the best version of their natural self without surgery.",
+            HARDMAXX: "Generate a hyper-realistic 8k photo of this person after full 'Hardmaxxing' Ascension. Apply significant structural bone changes: Optimized forward growth, perfect 115-degree gonial angle, hunter eyes (hooded lids, positive canthal tilt), and refined skeletal symmetry. This is the absolute genetic potential peak version achieved through structural reconstruction.",
             TITAN: "Generate a hyper-realistic 8k photo of this person transformed into a fitness model physique. Extremely low body fat (~10%), vascularity, broad shoulders, athletic build. Setting is outdoor gym.",
             ICON: "Generate a hyper-realistic 8k photo of this person with peak grooming and style. Expensive tailored clothing (Old Money aesthetic), perfect hair style, groomed beard, wearing a subtle luxury watch.",
         },

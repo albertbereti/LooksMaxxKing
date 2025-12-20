@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile } from '../types';
-import { getUserProfile, saveUserProfile, addCredits as serviceAddCredits } from '../services/historyService';
+import { getUserProfile, saveUserProfile, addCredits as serviceAddCredits, applyReferralCode } from '../services/historyService';
 
 interface UserContextType {
   user: UserProfile | null;
@@ -12,6 +11,7 @@ interface UserContextType {
   checkQuota: (category: string) => { allowed: boolean; reason?: 'limit' | 'premium_lock' };
   incrementQuota: (category: string) => void;
   addCredits: (amount: number) => void;
+  applyReferral: (code: string) => { success: boolean, message: string };
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -46,11 +46,17 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       refreshUser();
   };
 
+  const applyReferral = (code: string) => {
+      const result = applyReferralCode(code);
+      if (result.success) refreshUser();
+      return result;
+  };
+
   const checkQuota = (category: string) => {
     if (!user) return { allowed: false };
     
     // Check Premium Locks (Business Logic)
-    const premiumCategories = ['icon', 'surgery', 'style'];
+    const premiumCategories = ['icon', 'surgery', 'style', 'hardmaxx'];
     if (premiumCategories.includes(category) && !user.isPremium) {
         return { allowed: false, reason: 'premium_lock' as const };
     }
@@ -60,9 +66,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
     const record = user.usage[category] || { count: 0, lastReset: currentMonth };
 
-    // Auto-reset if new month
     if (record.lastReset !== currentMonth) {
-         // We don't save here to avoid side effects in render, but logic holds
          return { allowed: true };
     }
 
@@ -108,7 +112,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         unlockPremium, 
         checkQuota, 
         incrementQuota,
-        addCredits
+        addCredits,
+        applyReferral
     }}>
       {children}
     </UserContext.Provider>

@@ -32,26 +32,29 @@ export const Layout: React.FC<LayoutProps> = ({
               <div className="absolute inset-0 bg-amber-400 blur-lg opacity-0 group-hover:opacity-40 transition-opacity rounded-full"></div>
               <CrownLogo className="w-8 h-8 text-gray-900 dark:text-white group-hover:text-amber-500 transition-colors relative z-10" />
            </div>
-           <h1 className="text-xl md:text-2xl font-black tracking-tighter flex items-center">
-             LOOKSMAXX
-             <span className="text-amber-500 dark:text-amber-400 ml-1">KING</span>
-           </h1>
+           <div className="flex flex-col">
+               <h1 className="text-xl md:text-2xl font-black tracking-tighter flex items-center leading-none">
+                 LOOKSMAXX
+                 <span className="text-amber-500 dark:text-amber-400 ml-1">KING</span>
+               </h1>
+               <span className="text-[8px] font-bold uppercase text-zinc-500 tracking-[0.2em] mt-1">Professional Suite</span>
+           </div>
         </div>
         <div className="flex items-center gap-3 md:gap-4">
-            <nav className="hidden md:flex gap-6 items-center">
+            <nav className="hidden lg:flex gap-6 items-center">
                  {user && (
-                   <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 bg-zinc-200 dark:bg-zinc-800 px-3 py-1 rounded-full uppercase tracking-wider">
-                     Subject: {user.name}
-                   </span>
+                    <div className="flex items-center gap-2 bg-zinc-200 dark:bg-zinc-800 rounded-full px-3 py-1 border border-amber-500/20">
+                        <span className="text-[10px] font-black uppercase text-amber-600 dark:text-amber-500">Royal Credits: {user.credits}</span>
+                    </div>
                  )}
-                 <button onClick={() => onNavigate(AppState.HISTORY)} className="text-xs font-bold uppercase tracking-widest hover:text-amber-500 transition-colors">
+                 <button onClick={() => onNavigate(AppState.HISTORY)} className="text-[10px] font-bold uppercase tracking-widest hover:text-amber-500 transition-colors">
                     Archives
                  </button>
-                 <button onClick={() => onNavigate(AppState.COACH)} className="text-xs font-bold uppercase tracking-widest hover:text-amber-500 transition-colors">
+                 <button onClick={() => onNavigate(AppState.COACH)} className="text-[10px] font-bold uppercase tracking-widest hover:text-amber-500 transition-colors">
                     Coach
                  </button>
             </nav>
-            <button onClick={onOpenSettings} className="p-2.5 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-800 transition-colors">
+            <button onClick={onOpenSettings} className="p-2.5 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-800 transition-colors relative">
                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                </svg>
@@ -70,17 +73,18 @@ export const Layout: React.FC<LayoutProps> = ({
       {/* Footer */}
       <footer className="w-full max-w-7xl mx-auto px-6 py-8 border-t border-gray-200 dark:border-zinc-800 mt-auto text-center z-10 pb-safe">
           <div className="max-w-2xl mx-auto text-[10px] md:text-xs text-gray-500 dark:text-zinc-600 space-y-2 font-medium">
-              <p>LooksMaxx King uses AI for aesthetic analysis. Results are for entertainment purposes only.</p>
+              <p className="font-bold text-gray-400 dark:text-zinc-500">AESTHETIC INTELLIGENCE DISCLAIMER</p>
+              <p>
+                LooksMaxx King uses experimental AI for professional aesthetic simulations. Not medical advice. 18+ required.
+              </p>
               <div className="pt-4 flex justify-center gap-4 flex-wrap">
-                  <button onClick={() => onNavigate(AppState.BLOG)} className="hover:text-amber-500 transition-colors">Knowledge Base</button>
+                  <button onClick={() => onNavigate(AppState.BLOG)} className="hover:text-amber-500 transition-colors uppercase font-bold tracking-tighter">Knowledge</button>
                   <span className="opacity-30">•</span>
-                  <button onClick={() => onNavigate(AppState.TERMINOLOGY)} className="hover:text-amber-500 transition-colors">Glossary</button>
+                  <button onClick={() => onNavigate(AppState.TERMINOLOGY)} className="hover:text-amber-500 transition-colors uppercase font-bold tracking-tighter">Glossary</button>
                   <span className="opacity-30">•</span>
-                  <span>Terms</span>
-                  <span className="opacity-30">•</span>
-                  <span>Privacy</span>
+                  <button onClick={onOpenSettings} className="hover:text-amber-500 transition-colors uppercase font-bold tracking-tighter">Refer Friends</button>
               </div>
-              <p className="pt-2 opacity-50">© {new Date().getFullYear()} LooksMaxx King.</p>
+              <p className="pt-2 opacity-50">© {new Date().getFullYear()} LooksMaxx King AI. Built for Professional Aesthetic Research.</p>
           </div>
       </footer>
     </div>

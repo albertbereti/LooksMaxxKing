@@ -1,6 +1,7 @@
 
 // Utility to compress images before sending to API to reduce payload size and latency
-export const compressImage = (base64Str: string, maxWidth = 1280, quality = 0.85): Promise<string> => {
+// Upgraded for high-precision forensic analysis
+export const compressImage = (base64Str: string, maxWidth = 2048, quality = 0.95): Promise<string> => {
   return new Promise((resolve) => {
     const img = new Image();
     img.src = base64Str;
@@ -19,6 +20,9 @@ export const compressImage = (base64Str: string, maxWidth = 1280, quality = 0.85
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       if (ctx) {
+          // Use high quality interpolation
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, width, height);
           resolve(canvas.toDataURL('image/jpeg', quality));
       } else {

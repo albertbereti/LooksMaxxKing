@@ -1,7 +1,8 @@
 {
-  "name": "LooksMaxx King",
-  "description": "AI-powered facial aesthetics analysis and improvement tool.",
   "requestFramePermissions": [
-    "camera"
-  ]
+    "camera",
+    "geolocation"
+  ],
+  "name": "LOOKSMAXXKING | Free Face Rating & Glow Up AI",
+  "description": "Get your professional 1-10 face rating. See your genetic potential and get a personalized plan to improve your looks and style instantly."
 }

@@ -1,0 +1,30 @@
+name: Organism Heartbeat
+
+on:
+    schedule:
+        - cron: "0,30 * * * *"
+    workflow_dispatch: # Allow manual trigger for testing
+
+jobs:
+    heartbeat:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/checkout@v4
+              with:
+                  node-version: "20"
+
+            - name: Install Dependencies
+              run: npm install
+
+            - name: Pulse Meta-Monitor
+              env:
+                  FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+                  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+              run: |
+                  echo "Initiating 30-minute structural audit..."
+                  # This triggers the autonomous 'Soul' script via tsx
+                  npx tsx scripts/pulse.ts

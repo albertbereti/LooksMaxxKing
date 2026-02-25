@@ -1,281 +1,426 @@
-
-import React, { useState, useEffect, Suspense } from 'react';
-import { AppState, LooksAnalysis, ScanHistoryItem } from './types';
-import { UserProvider, useUser } from './contexts/UserContext';
+import React, { useState, useEffect } from 'react';
+import { initAnalytics, trackPageView, Events, trackEvent } from './services/analytics';
+import { AppState, LooksAnalysis, CartItem } from './types';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Layout } from './components/Layout';
-import { saveScan, getHistory } from './services/historyService';
-import { analyzeFace } from './services/geminiService';
-
-// Core Views (Eager Load for First Paint)
 import { LandingPage } from './components/LandingPage';
 import { CameraCapture } from './components/CameraCapture';
+import { AnalysisResult } from './components/AnalysisResult';
+import { ProgressDashboard } from './components/ProgressDashboard';
+import { SupportChat } from './components/SupportChat';
+import { CoachDashboard } from './components/CoachDashboard';
+import { ProductPage } from './components/ProductPage';
+import { ShopView } from './components/ShopView';
+import { CartView } from './components/CartView';
+import { BlogView } from './components/BlogView';
+import { TerminologyPage } from './components/TerminologyPage';
 import { SettingsModal } from './components/SettingsModal';
 import { LoadingScreen } from './components/ui/LoadingScreen';
+import { PaywallModal, AscensionProgramModal } from './components/PremiumModals';
+import { EmailCaptureModal } from './components/EmailCaptureModal';
+import { ReferralShareModal } from './components/ReferralShareModal';
+import { ExitIntentModal } from './components/ExitIntentModal';
+import { PrivacyPolicy } from './components/PrivacyPolicy';
+import { TermsOfService } from './components/TermsOfService';
+import { AffiliateDashboard } from './components/AffiliateDashboard';
+import { CookieConsent } from './components/CookieConsent';
+import { analyzeFace } from './services/geminiService';
+import { saveScan, getHistory, saveUserProfile } from './services/historyService';
+import { UserProvider, useUser } from './contexts/UserContext';
+import { HARDWARE_STORE_DB } from './data/supplyChain';
 
-// Heavy Views (Lazy Load for Performance)
-// This reduces the initial bundle size, making the app load faster globally
-const AnalysisResult = React.lazy(() => import('./components/AnalysisResult').then(module => ({ default: module.AnalysisResult })));
-const ProgressDashboard = React.lazy(() => import('./components/ProgressDashboard').then(module => ({ default: module.ProgressDashboard })));
-const BlogSection = React.lazy(() => import('./components/BlogSection').then(module => ({ default: module.BlogSection })));
-const CoachDashboard = React.lazy(() => import('./components/CoachDashboard').then(module => ({ default: module.CoachDashboard })));
-const TerminologyPage = React.lazy(() => import('./components/TerminologyPage').then(module => ({ default: module.TerminologyPage })));
-
-const NOISE_BG = "data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.5'/%3E%3C/svg%3E";
-
-const AppContent: React.FC = () => {
-  const { user, refreshUser } = useUser();
+function AppContent() {
+  const { user, refreshUser, incrementQuota, checkQuota, awardXP, unlockPremium } = useUser();
   const [appState, setAppState] = useState<AppState>(AppState.IDLE);
-  const [showSettings, setShowSettings] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
-  
-  // Data State
   const [analysis, setAnalysis] = useState<LooksAnalysis | null>(null);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
-  const [currentScanId, setCurrentScanId] = useState<string | undefined>(undefined);
-  const [history, setHistory] = useState<ScanHistoryItem[]>([]);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+  const [isAscensionModalOpen, setIsAscensionModalOpen] = useState(false);
+  const [isEmailCaptureOpen, setIsEmailCaptureOpen] = useState(false);
+  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
+  const [showExitIntent, setShowExitIntent] = useState(false);
+  const [exitIntentShown, setExitIntentShown] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Deep Linking State
-  const [initialPostId, setInitialPostId] = useState<string | null>(null);
-  const [initialTermId, setInitialTermId] = useState<string | null>(null);
+  const [activeProductId, setActiveProductId] = useState<string | null>(null);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [ascensionBoost, setAscensionBoost] = useState<{ name: string; bonus: string } | null>(null);
+  const [showPurchaseSuccess, setShowPurchaseSuccess] = useState(false);
 
+  // Initialize Google Analytics & Meta Pixel
   useEffect(() => {
-    setHistory(getHistory());
-    if (typeof window !== 'undefined') {
-        const saved = localStorage.getItem('theme');
-        const isDark = saved ? saved === 'dark' : true;
-        setDarkMode(isDark);
-        document.documentElement.classList.toggle('dark', isDark);
+    initAnalytics();
+  }, []);
 
-        // --- SEO: HANDLE DEEP LINKS FROM SITEMAP ---
-        // We use query params because we don't have a backend router
-        // Example: looksmaxx.ai/?page=blog&id=jawline-guide
-        const params = new URLSearchParams(window.location.search);
-        const page = params.get('page');
-        const id = params.get('id');
+  // Determine if user just returned from legitimate payment
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success') === 'true') {
+      // 1. Unlock Premium
+      unlockPremium();
+      refreshUser(); // Ensure state sync
 
-        if (page === 'blog') {
-            setAppState(AppState.BLOG);
-        } else if (page === 'article' && id) {
-            setInitialPostId(id);
-            setAppState(AppState.BLOG);
-        } else if (page === 'coach') {
-            setAppState(AppState.COACH);
-        } else if (page === 'terminology') {
-            if (id) setInitialTermId(id);
-            setAppState(AppState.TERMINOLOGY);
-        }
+      // 2. Track Conversion
+      trackEvent(Events.PURCHASE, { revenue: 29.99, currency: 'USD' });
+
+      // 3. Show Success & Clean URL
+      setShowPurchaseSuccess(true);
+      window.history.replaceState({}, '', window.location.pathname); // Clean URL
+
+      // 4. Auto-redirect to Coach Dashboard after celebration
+      setTimeout(() => {
+        setShowPurchaseSuccess(false);
+        setAppState(AppState.COACH);
+      }, 4000);
     }
   }, []);
 
-  // --- ANALYTICS TRACKING ---
-  
+  // Exit-intent detection
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-        // Guard against localhost tracking
-        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        if (isLocal) return;
+    if (exitIntentShown || user?.isPremium) return; // Don't show if already shown or user is premium
 
-        const virtualPath = `/${appState.toLowerCase()}`;
-        
-        // 1. Facebook Pixel PageView
-        if (window.fbq) {
-            window.fbq('track', 'PageView', { page_path: virtualPath });
-        }
+    const handleMouseOut = (e: MouseEvent) => {
+      if (e.clientY <= 0 && !exitIntentShown) {
+        setShowExitIntent(true);
+        setExitIntentShown(true);
+      }
+    };
 
-        // 2. Google Analytics (GA4) PageView
-        if (window.gtag) {
-             window.gtag('event', 'page_view', {
-                page_title: appState,
-                page_location: window.location.href + virtualPath
-             });
-        }
+    document.addEventListener('mouseout', handleMouseOut);
+    return () => document.removeEventListener('mouseout', handleMouseOut);
+  }, [exitIntentShown, user?.isPremium]);
 
-        // 3. TikTok Pixel PageView
-        if (window.ttq) {
-            window.ttq.page();
-        }
+  // Load cart from local storage
+  useEffect(() => {
+    const savedCart = localStorage.getItem('looksmaxx_cart');
+    if (savedCart) setCart(JSON.parse(savedCart));
+  }, []);
 
-        // 4. Track Specific Conversion Events
-        if (appState === AppState.CAMERA) {
-            // User is high-intent, they clicked "Start"
-            if (window.fbq) window.fbq('track', 'InitiateCheckout', { content_name: 'Started Scan' });
-            if (window.gtag) window.gtag('event', 'begin_checkout', { items: [{ item_name: 'AI Scan' }] });
-            if (window.ttq) window.ttq.track('InitiateCheckout', { content_name: 'Started Scan' });
-        } 
-        else if (appState === AppState.RESULT && analysis) {
-            // User successfully got a result
-            if (window.fbq) {
-                window.fbq('track', 'ViewContent', { 
-                    content_name: 'Analysis Result',
-                    content_category: 'AI Scan',
-                    value: analysis.overallScore,
-                    currency: 'USD'
-                });
-            }
-            if (window.gtag) {
-                window.gtag('event', 'generate_lead', {
-                    value: analysis.overallScore,
-                    currency: 'USD'
-                });
-            }
-            if (window.ttq) {
-                window.ttq.track('ViewContent', { 
-                    content_name: 'Analysis Result',
-                    content_category: 'AI Scan',
-                    value: analysis.overallScore,
-                    currency: 'USD'
-                });
-            }
-        }
-        else if (appState === AppState.COACH) {
-             if (window.fbq) window.fbq('track', 'Lead', { content_name: 'Viewed Coach Dashboard' });
-             if (window.ttq) window.ttq.track('ViewContent', { content_name: 'Viewed Coach Dashboard' });
-        }
-        else if (appState === AppState.BLOG) {
-             if (window.fbq) window.fbq('track', 'ViewContent', { content_name: 'Blog Library' });
-             if (window.ttq) window.ttq.track('ViewContent', { content_name: 'Blog Library' });
-        }
-        else if (appState === AppState.TERMINOLOGY) {
-             if (window.fbq) window.fbq('track', 'ViewContent', { content_name: 'Terminology Dictionary' });
-             if (window.ttq) window.ttq.track('ViewContent', { content_name: 'Terminology Dictionary' });
-        }
+  // Save cart
+  useEffect(() => {
+    localStorage.setItem('looksmaxx_cart', JSON.stringify(cart));
+  }, [cart]);
+
+  // Smart Landing: Auto-redirect based on user state
+  useEffect(() => {
+    if (!user || appState !== AppState.IDLE) return;
+
+    // Premium users → Coach Dashboard
+    if (user.isPremium) {
+      setAppState(AppState.COACH);
+      return;
     }
-  }, [appState, analysis]);
 
-  const toggleTheme = () => {
-      const newMode = !darkMode;
-      setDarkMode(newMode);
-      document.documentElement.classList.toggle('dark', newMode);
-      localStorage.setItem('theme', newMode ? 'dark' : 'light');
-  };
+    // Free users with scan history → Latest result
+    const history = getHistory();
+    if (history && history.length > 0) {
+      const latestScan = history[0];
+      setAnalysis(latestScan.analysis);
+      setCurrentImage(latestScan.assets?.original || null);
+      setAppState(AppState.RESULT);
+    }
+    // New users → Stay on landing page
+  }, [user, appState]);
 
-  const handleCapture = async (imageData: string) => {
-    setCurrentImage(imageData);
+  const handleCapture = async (image: string) => {
+    // PRE-CHECK: Verify quota before attempting scan
+    const quotaCheck = checkQuota('audit');
+    if (!quotaCheck.allowed) {
+      setCurrentImage(image); // Save image for later if they upgrade
+      if (quotaCheck.reason === 'limit') {
+        // User has exceeded free tier - show paywall
+        trackEvent(Events.CHECKOUT_STARTED, { trigger: 'quota_exceeded' });
+        setIsAscensionModalOpen(true);
+        return;
+      }
+    }
+
+    setCurrentImage(image);
     setAppState(AppState.ANALYZING);
+    setIsLoading(true);
+    setError(null); // Clear previous errors
+    trackEvent(Events.SCAN_STARTED, { method: 'camera' });
     try {
-      const result = await analyzeFace(imageData);
+      const result = await analyzeFace(image);
       setAnalysis(result);
-      const updatedHistory = saveScan(result);
-      setHistory(updatedHistory);
-      if (updatedHistory.length > 0) setCurrentScanId(updatedHistory[0].id);
+      saveScan(result, image);
+      incrementQuota('audit');
+      // SAVE SCORE FOR AI CONCIERGE UPSELLS
+      saveUserProfile({ ...user, recentScore: result.overallScore });
+      refreshUser();
+
+      trackEvent(Events.SCAN_COMPLETED, { score: result.overallScore, method: 'camera' });
+
+      // Show email capture modal after first scan (7 second delay)
+      if (user && !user.email) {
+        setTimeout(() => {
+          trackEvent(Events.EMAIL_CAPTURED, { action: 'shown' });
+          setIsEmailCaptureOpen(true);
+        }, 7000);
+      }
       setAppState(AppState.RESULT);
     } catch (err: any) {
-      console.error(err);
-      if (err.message && (err.message.includes("traffic") || err.message.includes("quota") || err.message.includes("limit"))) {
-          setError(err.message);
-      } else {
-          setError("The King could not analyze this image. Ensure clear lighting and try again.");
-      }
-      setCurrentImage(null);
+      console.error("Scan Error:", err);
+
+      // Handle different error types appropriately
+      const errorType = err.type || 'unknown';
+      const userMessage = err.userMessage || err.message || "Analysis failed. Please try again.";
+
+      setError(userMessage);
       setAppState(AppState.IDLE);
+
+      // Only show upgrade modal for quota errors, not for all errors
+      if (errorType === 'quota_exceeded') {
+        trackEvent(Events.CHECKOUT_STARTED, { trigger: 'api_quota' });
+        setIsAscensionModalOpen(true);
+      }
+      // For other errors, the error message will be displayed on the landing page
+      trackEvent(Events.SCAN_ERROR, { errorType, message: userMessage });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleRetake = () => {
-    setAnalysis(null);
-    setCurrentImage(null);
-    setCurrentScanId(undefined);
-    setAppState(AppState.IDLE);
+  const handleAddToCart = (productId: string, quantity: number) => {
+    const product = HARDWARE_STORE_DB[productId];
+    if (!product || !user) return;
+
+    setCart(prev => {
+      const existing = prev.find(item => item.id === productId);
+      if (existing) {
+        return prev.map(item => item.id === productId ? { ...item, quantity: item.quantity + quantity } : item);
+      }
+      return [...prev, {
+        id: productId,
+        name: product.name,
+        price: product.numericPrice,
+        quantity,
+        image: product.image,
+        checkoutUrl: product.checkoutUrl
+      }];
+    });
+
+    // BACKEND INTEGRATION: Automatically add to inventory so it appears in Ascension Command tasks
+    const updatedInventory = [...(user.inventory || [])];
+    if (!updatedInventory.includes(productId)) {
+      updatedInventory.push(productId);
+      const updatedUser = { ...user, inventory: updatedInventory };
+      saveUserProfile(updatedUser);
+      refreshUser();
+    }
+
+    // Gamified Feedback
+    const bonusSmv = (product.xpValue / 1000).toFixed(1);
+    setAscensionBoost({ name: product.name, bonus: bonusSmv });
+    setTimeout(() => setAscensionBoost(null), 3000);
   };
 
+  const removeFromCart = (id: string) => {
+    setCart(prev => prev.filter(item => item.id !== id));
+  };
+
+  const updateCartQty = (id: string, delta: number) => {
+    setCart(prev => prev.map(item => item.id === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item));
+  };
+
+  const totalCartItems = cart.reduce((acc, curr) => acc + curr.quantity, 0);
+
   const renderView = () => {
-      switch (appState) {
-          case AppState.IDLE:
-              return (
-                  <LandingPage 
-                    onStart={() => { setAppState(AppState.CAMERA); setError(null); }} 
-                    onOpenSettings={() => setShowSettings(true)}
-                    onOpenCoach={() => setAppState(AppState.COACH)}
-                    userProfile={user}
-                    error={error}
-                  />
-              );
-          case AppState.CAMERA:
-              return (
-                  <div className="w-full animate-fade-in py-2 md:py-8 flex justify-center">
-                    <CameraCapture onCapture={handleCapture} onCancel={() => setAppState(AppState.IDLE)} />
-                  </div>
-              );
-          case AppState.ANALYZING:
-              return <LoadingScreen />;
-          case AppState.RESULT:
-              return analysis ? (
-                  <Suspense fallback={<LoadingScreen />}>
-                    <AnalysisResult 
-                        analysis={analysis} 
-                        imageData={currentImage}
-                        onRetake={handleRetake}
-                        scanId={currentScanId}
-                        onOpenCoach={() => setAppState(AppState.COACH)}
-                    />
-                  </Suspense>
-              ) : null;
-          case AppState.HISTORY:
-              return (
-                  <Suspense fallback={<LoadingScreen />}>
-                    <ProgressDashboard 
-                        history={history} 
-                        onBack={() => setAppState(AppState.IDLE)} 
-                        onSelectScan={(item) => { setAnalysis(item); setCurrentImage(null); setAppState(AppState.RESULT); }}
-                    />
-                  </Suspense>
-              );
-          case AppState.BLOG:
-              return (
-                  <Suspense fallback={<LoadingScreen />}>
-                     <BlogSection onBack={() => setAppState(AppState.IDLE)} initialPostId={initialPostId} />
-                  </Suspense>
-              );
-          case AppState.TERMINOLOGY:
-              return (
-                  <Suspense fallback={<LoadingScreen />}>
-                    <TerminologyPage onBack={() => setAppState(AppState.IDLE)} initialTermId={initialTermId} />
-                  </Suspense>
-              );
-          case AppState.COACH:
-              return (
-                  <Suspense fallback={<LoadingScreen />}>
-                     <CoachDashboard onBack={() => setAppState(AppState.IDLE)} />
-                  </Suspense>
-              );
-          default:
-              return null;
-      }
+    switch (appState) {
+      case AppState.IDLE:
+        return (
+          <LandingPage
+            onStart={() => setAppState(AppState.CAMERA)}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            onOpenCoach={() => setAppState(AppState.COACH)}
+            onOpenBlog={() => setAppState(AppState.BLOG)}
+            onOpenAffiliate={() => setAppState(AppState.AFFILIATE)}
+            userProfile={user}
+            error={error}
+          />
+        );
+      case AppState.CAMERA:
+        return <CameraCapture onCapture={handleCapture} onCancel={() => setAppState(AppState.IDLE)} />;
+      case AppState.ANALYZING:
+        return <LoadingScreen />;
+      case AppState.RESULT:
+        return analysis ? (
+          <AnalysisResult
+            analysis={analysis}
+            imageData={currentImage}
+            onRetake={() => setAppState(AppState.IDLE)}
+            onOpenProduct={(id) => { setActiveProductId(id); setAppState(AppState.PRODUCT); }}
+            onAddToCart={handleAddToCart}
+            onTriggerPaywall={() => setIsAscensionModalOpen(true)}
+          />
+        ) : null;
+      case AppState.SHOP:
+        return <ShopView onOpenProduct={(id) => { setActiveProductId(id); setAppState(AppState.PRODUCT); }} onBack={() => setAppState(AppState.IDLE)} />;
+      case AppState.PRODUCT:
+        return <ProductPage productId={activeProductId || 'mastic-gum'} onBack={() => setAppState(AppState.SHOP)} onAddToCart={handleAddToCart} />;
+      case AppState.CART:
+        return <CartView items={cart} onBack={() => setAppState(AppState.SHOP)} onRemove={removeFromCart} onUpdateQty={updateCartQty} />;
+      case AppState.HISTORY:
+        return <ProgressDashboard history={getHistory()} onBack={() => setAppState(AppState.IDLE)} onSelectScan={(a) => { setAnalysis(a); setAppState(AppState.RESULT); }} />;
+      case AppState.COACH:
+        return <CoachDashboard onBack={() => setAppState(AppState.IDLE)} />;
+      case AppState.BLOG:
+        return <BlogView onBack={() => setAppState(AppState.IDLE)} />;
+      case AppState.TERMINOLOGY:
+        return <TerminologyPage onBack={() => setAppState(AppState.IDLE)} />;
+      case AppState.PRIVACY:
+        return <PrivacyPolicy onBack={() => setAppState(AppState.IDLE)} />;
+      case AppState.TERMS:
+        return <TermsOfService onBack={() => setAppState(AppState.IDLE)} />;
+      case AppState.AFFILIATE:
+        return <AffiliateDashboard onBack={() => setAppState(AppState.IDLE)} />;
+      default:
+        return (
+          <LandingPage
+            onStart={() => setAppState(AppState.CAMERA)}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            onOpenCoach={() => setAppState(AppState.COACH)}
+            onOpenBlog={() => setAppState(AppState.BLOG)}
+            onOpenAffiliate={() => setAppState(AppState.AFFILIATE)}
+            userProfile={user}
+          />
+        );
+    }
+  };
+
+
+
+  const pageVariants = {
+    initial: { opacity: 0, y: 10, scale: 0.98 },
+    in: { opacity: 1, y: 0, scale: 1 },
+    out: { opacity: 0, y: -10, scale: 0.98 }
+  };
+
+  const pageTransition: any = {
+    type: "tween",
+    ease: "anticipate",
+    duration: 0.4
   };
 
   return (
-      <Layout 
-        onNavigate={setAppState} 
-        onOpenSettings={() => setShowSettings(true)} 
-        onRetake={handleRetake}
-        darkMode={darkMode}
-        toggleTheme={toggleTheme}
-      >
-        <SettingsModal 
-            isOpen={showSettings} 
-            onClose={() => setShowSettings(false)} 
-            onDataChange={() => { refreshUser(); setHistory(getHistory()); }} 
-        />
+    <Layout
+      onNavigate={(state) => setAppState(state)}
+      onOpenSettings={() => setIsSettingsOpen(true)}
+      onRetake={() => setAppState(AppState.IDLE)}
+      darkMode={true}
+      toggleTheme={() => { }}
+      currentState={appState}
+      cartCount={totalCartItems}
+    >
+      <div className="w-full flex-grow flex flex-col items-center h-full relative overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={appState}
+            initial="initial"
+            animate="in"
+            exit="out"
+            variants={pageVariants}
+            transition={pageTransition}
+            className="w-full h-full flex flex-col"
+          >
+            {renderView()}
+          </motion.div>
+        </AnimatePresence>
 
-        {renderView()}
+        {/* Modals and Overlays */}
+        <AnimatePresence>
+          {/* Modals are controlled by state and rendered conditionally within this container if needed, 
+              but the main view should only render once. Removing redundant renderView() call. */}
+        </AnimatePresence>
 
-        {/* Background FX */}
-        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-            <div className="absolute inset-0 opacity-0 dark:opacity-100 transition-opacity duration-500">
-                <div className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] bg-amber-900/10 rounded-full blur-[120px] opacity-20"></div>
-                <div className="absolute bottom-0 right-0 w-[50vw] h-[50vw] bg-blue-900/10 rounded-full blur-[150px] opacity-20"></div>
-                <div className="absolute top-0 left-0 w-full h-full opacity-[0.02]" style={{backgroundImage: `url("${NOISE_BG}")`}}></div>
+        <CookieConsent />
+
+        {/* Gamified Ascension Boost Popup */}
+        {ascensionBoost && (
+          <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[250] animate-fade-in-up px-4 w-full max-w-sm">
+            <div className="bg-zinc-900/90 backdrop-blur-xl border border-amber-500/30 p-4 rounded-3xl shadow-[0_20px_50px_rgba(245,158,11,0.3)] flex items-center gap-4">
+              <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-black font-black text-2xl shadow-lg flex-shrink-0">
+                +
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] italic leading-none mb-1">ASCENSION INITIATED</p>
+                <p className="text-white text-[13px] font-black uppercase italic tracking-tight truncate">{ascensionBoost.name}</p>
+                <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">EST. SMV BOOST: +{ascensionBoost.bonus}</p>
+              </div>
             </div>
-        </div>
-      </Layout>
+          </div>
+        )}
+
+        {/* Purchase Success Celebration Overlay */}
+        {
+          showPurchaseSuccess && (
+            <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-fade-in">
+              <div className="bg-[#0b0b0c] border border-amber-500/50 p-8 rounded-[3rem] text-center shadow-[0_0_100px_rgba(245,158,11,0.6)] relative overflow-hidden max-w-sm w-full animate-scale-in">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
+                <div className="relative z-10">
+                  <div className="w-20 h-20 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(245,158,11,0.8)] animate-bounce">
+                    <svg className="w-10 h-10 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <h2 className="text-3xl font-[1000] text-amber-500 italic uppercase tracking-tighter leading-none mb-2">ASCENSION GRANTED</h2>
+                  <p className="text-zinc-400 text-[10px] font-black uppercase tracking-[0.3em]">Protocol Unlocked • Titan Access Active</p>
+                  <div className="mt-8">
+                    <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest animate-pulse">Redirecting to Command Center...</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        }
+      </div>
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onDataChange={refreshUser} />
+
+      {
+        isPaywallOpen && (
+          <PaywallModal
+            onClose={() => setIsPaywallOpen(false)}
+            onPurchase={() => { unlockPremium(); setIsPaywallOpen(false); refreshUser(); }}
+            isProcessing={false}
+          />
+        )
+      }
+
+      {
+        isAscensionModalOpen && (
+          <AscensionProgramModal onClose={() => setIsAscensionModalOpen(false)} />
+        )
+      }
+
+      {
+        isEmailCaptureOpen && (
+          <EmailCaptureModal
+            onClose={() => setIsEmailCaptureOpen(false)}
+            onSubmit={(email, phone, smsOptIn) => {
+              console.log('Email captured:', { email, phone, smsOptIn });
+              // Email is already saved to UserProfile in the modal
+              refreshUser();
+            }}
+          />
+        )
+      }
+
+      {
+        showExitIntent && !user?.isPremium && (
+          <ExitIntentModal
+            onClose={() => setShowExitIntent(false)}
+            onUpgrade={() => {
+              setShowExitIntent(false);
+              setIsAscensionModalOpen(true);
+            }}
+          />
+        )
+      }
+      {/* Automated AI Support Concierge */}
+      {appState !== AppState.CAMERA && appState !== AppState.ANALYZING && <SupportChat />}
+    </Layout>
   );
-};
+}
 
-const App: React.FC = () => (
-    <UserProvider>
-        <AppContent />
-    </UserProvider>
-);
-
-export default App;
+export default function App() {
+  return <UserProvider><AppContent /></UserProvider>;
+}

@@ -20,6 +20,33 @@ interface ArchetypeVisualizerProps {
     loadingMessage: string;
 }
 
+const ARCHETYPE_DELTAS = {
+    softmax: [
+        "BF% Reduction: -5% (Structural Reveal)",
+        "Dermal Clarity: +40% (Retinoid Simulation)",
+        "Masseter Hypertrophy: +15% (Mastic Load)",
+        "Grooming: GQ-Standard eyebrow/hair shaping"
+    ],
+    hardmaxx: [
+        "Gonial Angle: Optimized to 110°",
+        "Maxillary Advancement: +3mm Forward Growth",
+        "Chin Projection: Symmetric BSSO Alignment",
+        "Infraorbital Support: Zero UEE/Scleral Show"
+    ],
+    titan: [
+        "Golden Ratio Symmetry: 99.8% Accuracy",
+        "Hunter Eye Remapping: Positive Canthal Tilt",
+        "Secondary Sex Characteristics: Max Dimorphism",
+        "Craniofacial Harmony: Fibonacci-scaled thirds"
+    ],
+    icon: [
+        "Wealth Archetyping: High-prestige aura",
+        "Bespoke Grooming: Zero-tolerance precision",
+        "Advanced Lighting: Studio-grade depth remapping",
+        "Total SMV Saturation: 10.0 Zenith"
+    ]
+};
+
 export const ArchetypeVisualizer: React.FC<ArchetypeVisualizerProps> = ({
     activeArchetype,
     isPremiumUnlocked,
@@ -65,12 +92,29 @@ export const ArchetypeVisualizer: React.FC<ArchetypeVisualizerProps> = ({
             {/* Main Visualizer */}
             <div className="relative aspect-[16/9] md:aspect-[21/9] bg-zinc-900/50 rounded-2xl overflow-hidden border border-zinc-800 group-hover:border-amber-500/30 transition-colors">
                 {currentImage ? (
-                    <img 
-                        src={currentImage} 
-                        alt="Generated Archetype" 
-                        className="w-full h-full object-cover object-center animate-fade-in cursor-zoom-in"
-                        onClick={() => onFullScreen(currentImage)}
-                    />
+                    <>
+                        <img 
+                            src={currentImage} 
+                            alt="Generated Archetype" 
+                            className="w-full h-full object-cover object-center animate-fade-in cursor-zoom-in"
+                            onClick={() => onFullScreen(currentImage)}
+                        />
+                        
+                        {/* CHANGE LOG OVERLAY */}
+                        <div className="absolute top-4 left-4 z-40 space-y-2 pointer-events-none">
+                            <div className="bg-black/60 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl animate-fade-in-up">
+                                <p className="text-amber-500 font-black text-[8px] uppercase tracking-[0.4em] mb-2 italic">MODIFICATION_MANIFEST</p>
+                                <div className="space-y-1">
+                                    {ARCHETYPE_DELTAS[activeArchetype].map((delta, i) => (
+                                        <div key={i} className="flex items-center gap-2">
+                                            <div className="w-1 h-1 rounded-full bg-amber-500"></div>
+                                            <p className="text-white text-[9px] font-black uppercase italic tracking-tight">{delta}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </>
                 ) : (
                     <div className="absolute inset-0 flex items-center justify-center flex-col text-zinc-600 bg-black/50">
                         {isGenerating ? (

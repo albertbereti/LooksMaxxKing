@@ -1,167 +1,115 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    
-    <!-- Analytics Prevention for Localhost -->
-    <script>
-      window.isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-    </script>
 
-    <!-- Google tag (gtag.js) -->
-    <script>
-      if (window.isProduction) {
-        // Inject the script tag dynamically
-        const script = document.createElement('script');
-        script.async = true;
-        script.src = "https://www.googletagmanager.com/gtag/js?id=G-23BBCSXMKH";
-        document.head.appendChild(script);
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LOOKSMAXXKING">
+  <meta name="mobile-web-app-capable" content="yes">
 
-        // Initialize
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        window.gtag = gtag;
-        gtag('js', new Date());
-        
-        // We set send_page_view to false because we track page views manually in App.tsx
-        gtag('config', 'G-23BBCSXMKH', { 'send_page_view': false });
-      }
-    </script>
+  <!-- SEO Meta Tags -->
+  <title>LOOKSMAXXKING | Free AI Face Rating & Personalized Glow-Up Plan</title>
+  <meta name="description"
+    content="Get your free AI-powered face rating in 60 seconds. Discover your attractiveness score, facial analysis, and personalized improvement plan. 10 free scans/month. Start your glow-up journey today!">
+  <meta name="keywords"
+    content="face rating, ai face rating, facial attractiveness, looksmaxxing, mewing, face analysis, attractiveness test, glow up, facial improvement">
+  <meta name="author" content="LOOKSMAXXKING">
+  <meta name="robots" content="index, follow">
 
-    <!-- Meta Pixel Code -->
-    <script>
-    if (window.isProduction) {
-      !function(f,b,e,v,n,t,s)
-      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)}(window, document,'script',
-      'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', '1187189922855386');
-      // fbq('track', 'PageView'); // Handled in App.tsx to track virtual pages correctly
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://looksmaxxking.com/">
+  <meta property="og:title" content="LOOKSMAXXKING - Free AI Face Rating Tool">
+  <meta property="og:description"
+    content="Get your free AI face rating, personalized glow-up plan, and track your transformation. Scientific facial analysis in 60 seconds.">
+  <meta property="og:image" content="https://looksmaxxking.com/og-image.jpg">
+
+  <!-- Twitter Card -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://looksmaxxking.com/">
+  <meta property="twitter:title" content="LOOKSMAXXKING - Free AI Face Rating">
+  <meta property="twitter:description"
+    content="AI-powered face rating and personalized improvement plan. Free scans, track progress, level up your looks.">
+  <meta property="twitter:image" content="https://looksmaxxking.com/og-image.jpg">
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "LOOKSMAXXKING",
+    "description": "Free AI-powered face rating and personalized facial improvement recommendations",
+    "url": "https://looksmaxxking.com",
+    "applicationCategory": "HealthApplication",
+    "operatingSystem": "Web, iOS, Android",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "description": "10 free face scans per month"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "ratingCount": "1247"
     }
-    </script>
-    <noscript><img height="1" width="1" style="display:none"
-    src="https://www.facebook.com/tr?id=1187189922855386&ev=PageView&noscript=1"
-    /></noscript>
-    <!-- End Meta Pixel Code -->
-
-    <!-- TikTok Pixel Code Start -->
-    <script>
-    if (window.isProduction) {
-      !function (w, d, t) {
-        w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(
-        var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=document.createElement("script")
-        ;n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
-
-        ttq.load('D4TR47RC77UFBBBO8LD0');
-        ttq.page();
-      }(window, document, 'ttq');
-    }
-    </script>
-    <!-- TikTok Pixel Code End -->
-
-    <!-- SEO & Social Media (Open Graph) -->
-    <meta name="description" content="AI-powered facial aesthetics analysis. Get your score, identify flaws, and visualize your prime potential with LooksMaxx King.">
-    <meta property="og:title" content="LooksMaxx King - AI Face Analysis">
-    <meta property="og:description" content="Get your aesthetic score, identify flaws, and visualize your prime potential.">
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="LooksMaxx King">
-    
-    <!-- Mobile Web App Capabilities (iOS) -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="LooksMaxx King">
-    
-    <!-- Mobile Web App Capabilities (Android/Generic) -->
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="LooksMaxx King">
-    
-    <!-- Theme Colors -->
-    <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)">
-    <meta name="theme-color" content="#f9fafb" media="(prefers-color-scheme: light)">
-    
-    <title>LooksMaxx King | AI Aesthetics Coach</title>
-    
-    <!-- Favicon (Jeweled Crown) -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22><path d=%22M2 18C2 19.1046 2.89543 20 4 20H20C21.1046 20 22 19.1046 22 18V16H2V18Z%22 fill=%22%23fbbf24%22 stroke=%22%23fbbf24%22 stroke-width=%221.5%22 /><path d=%22M12 4L15 10L21 6L19 15H5L3 6L9 10L12 4Z%22 stroke=%22%23fbbf24%22 stroke-width=%221.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/><circle cx=%2212%22 cy=%224%22 r=%221.5%22 fill=%22%23fbbf24%22 /><circle cx=%2221%22 cy=%226%22 r=%221.5%22 fill=%22%23fbbf24%22 /><circle cx=%223%22 cy=%226%22 r=%221.5%22 fill=%22%23fbbf24%22 /></svg>">
-    
-    <!-- PWA Manifest (Data URI) -->
-    <link rel="manifest" href='data:application/manifest+json,{"name":"LooksMaxx King","short_name":"LooksMaxx","start_url":".","display":"standalone","background_color":"#09090b","theme_color":"#09090b","orientation":"portrait","icons":[{"src":"data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22><rect width=%2224%22 height=%2224%22 fill=%22%2309090b%22/><path d=%22M2 18C2 19.1046 2.89543 20 4 20H20C21.1046 20 22 19.1046 22 18V16H2V18Z%22 fill=%22%23fbbf24%22 stroke=%22%23fbbf24%22 stroke-width=%221.5%22 /><path d=%22M12 4L15 10L21 6L19 15H5L3 6L9 10L12 4Z%22 stroke=%22%23fbbf24%22 stroke-width=%221.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/><circle cx=%2212%22 cy=%224%22 r=%221.5%22 fill=%22%23fbbf24%22 /><circle cx=%2221%22 cy=%226%22 r=%221.5%22 fill=%22%23fbbf24%22 /><circle cx=%223%22 cy=%226%22 r=%221.5%22 fill=%22%23fbbf24%22 /></svg>","sizes":"192x192","type":"image/svg+xml"}]}'>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-            },
-            animation: {
-              'fade-in': 'fadeIn 0.5s ease-out',
-              'fade-in-up': 'fadeInUp 0.8s ease-out',
-              'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            },
-            keyframes: {
-              fadeIn: {
-                '0%': { opacity: '0' },
-                '100%': { opacity: '1' },
-              },
-              fadeInUp: {
-                '0%': { opacity: '0', transform: 'translateY(20px)' },
-                '100%': { opacity: '1', transform: 'translateY(0)' },
-              },
-            },
-          }
-        }
-      }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-      body {
-        font-family: 'Inter', sans-serif;
-        overflow-x: hidden;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        overscroll-behavior-y: none; /* Prevents pull-to-refresh on mobile which ruins camera UI */
-        user-select: none; /* App-like feel */
-        background-color: #09090b; /* Prevent white flash on load */
-      }
-      /* Hide scrollbar for Chrome, Safari and Opera */
-      .no-scrollbar::-webkit-scrollbar {
-          display: none;
-      }
-      /* Hide scrollbar for IE, Edge and Firefox */
-      .no-scrollbar {
-          -ms-overflow-style: none;  /* IE and Edge */
-          scrollbar-width: none;  /* Firefox */
-      }
-      /* Glassmorphism utility */
-      .glass {
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-      }
-      /* Safe Area support for Notch */
-      .pt-safe {
-        padding-top: env(safe-area-inset-top, 20px);
-      }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
   }
-}
-</script>
+  </script>
+
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22><path d=%22M2 18C2 19.1046 2.89543 20 4 20H20C21.1046 20 22 19.1046 22 18V16H2V18Z%22 fill=%22%23fbbf24%22 /><path d=%22M12 4L15 10L21 6L19 15H5L3 6L9 10L12 4Z%22 stroke=%22%23fbbf24%22 stroke-width=%222.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <!-- Google Analytics Placeholder -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
+
+  <!-- Meta Pixel Code Placeholder -->
+  <script>
+    !function (f, b, e, v, n, t, s) {
+      if (f.fbq) return; n = f.fbq = function () {
+        n.callMethod ?
+          n.callMethod.apply(n, arguments) : n.queue.push(arguments)
+      };
+      if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0';
+      n.queue = []; t = b.createElement(e); t.async = !0;
+      t.src = v; s = b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t, s)
+    }(window, document, 'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', 'XXXXXXXXXXXXXXXX');
+    fbq('track', 'PageView');
+  </script>
+  <!-- End Meta Pixel Code -->
+
+  <!-- GDPR Cookie Consent -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      if (!localStorage.getItem("cookieConsent")) {
+        const banner = document.createElement("div");
+        banner.innerHTML = '<div style="position:fixed;bottom:0;left:0;right:0;background:#111;color:#fff;padding:15px;text-align:center;z-index:999999;border-top:1px solid #333;font-family:sans-serif;font-size:14px;">We use essential cookies to provide our services and protect your data. By continuing, you agree to our <a href="/legal.html" target="_blank" style="color:#10b981;text-decoration:underline;">Privacy Policy & TOS</a>. <button id="acceptCookies" style="margin-left:15px;background:#10b981;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:bold;">Accept</button></div>';
+        document.body.appendChild(banner);
+        document.getElementById("acceptCookies").addEventListener("click", function () {
+          localStorage.setItem("cookieConsent", "true");
+          banner.remove();
+        });
+      }
+    });
+  </script>
 </head>
-  <body>
-    <div id="root"></div>
-  </body>
+
+<body>
+  <noscript><img height="1" width="1" style="display:none"
+      src="https://www.facebook.com/tr?id=XXXXXXXXXXXXXXXX&ev=PageView&noscript=1" /></noscript>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
 </html>

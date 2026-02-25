@@ -1,160 +1,324 @@
-import React from 'react';
-import { Button } from './Button';
+
+import React, { useState, useEffect } from 'react';
 import { CrownLogo } from './CrownLogo';
 import { UserProfile } from '../types';
 import { SEOHead } from './SEOHead';
+import { FAQSection } from './FAQSection';
 
 interface LandingPageProps {
-  onStart: () => void;
-  onOpenSettings: () => void;
-  onOpenCoach: () => void;
-  userProfile: UserProfile | null;
-  error?: string | null;
+    onStart: () => void;
+    onOpenSettings: () => void;
+    onOpenCoach: () => void;
+    onOpenBlog: () => void;
+    onOpenAffiliate: () => void;
+    userProfile: UserProfile | null;
+    error?: string | null;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ 
-    onStart, 
-    onOpenSettings, 
-    onOpenCoach, 
-    userProfile, 
-    error 
+export const LandingPage: React.FC<LandingPageProps> = ({
+    onStart,
+    onOpenBlog,
+    onOpenSettings,
+    onOpenCoach,
+    onOpenAffiliate,
+    userProfile,
+    error,
 }) => {
-  const landingSchema = {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "LooksMaxx King",
-    "applicationCategory": "HealthApplication",
-    "operatingSystem": "Web",
-    "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-    },
-    "description": "AI-powered facial aesthetics analysis tool. Professional aesthetic simulations and protocols.",
-    "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.9",
-        "ratingCount": "1250"
-    }
-  };
+    const [activeScans, setActiveScans] = useState(14202);
+    const [variant, setVariant] = useState<'A' | 'B'>('A');
 
-  return (
-    <div className="w-full flex flex-col items-center">
-        <SEOHead 
-            title="LooksMaxx AI | Aesthetic Intelligence Platform" 
-            description="Professional AI Face Analysis. Get your aesthetic score and visualize your prime potential."
-            keywords={["looksmaxxing app", "ai face rating", "canthal tilt calculator", "aesthetic intelligence"]}
-            structuredData={landingSchema}
-            canonicalUrl="https://looksmaxx.ai/"
-        />
+    useEffect(() => {
+        // Fetch global A/B variant
+        const fetchVariant = async () => {
+            try {
+                const { doc, getDoc, getFirestore } = await import('firebase/firestore');
+                const db = getFirestore();
+                const snap = await getDoc(doc(db, 'meta_configs', 'funnel_settings'));
+                if (snap.exists()) {
+                    setVariant(snap.data().activeVariant || 'A');
+                }
+            } catch (e) {
+                console.warn("A/B fetch failed, defaulting to A");
+            }
+        };
+        fetchVariant();
+    }, []);
 
-        {/* --- HERO SECTION --- */}
-        <div className="text-center w-full max-w-4xl animate-fade-in-up px-2 sm:px-4 flex flex-col items-center min-h-[80vh] justify-center">
-            <div className="mb-8 md:mb-10 relative">
-                <div className="absolute inset-0 bg-amber-500 blur-[50px] opacity-20 dark:opacity-30 rounded-full"></div>
-                <CrownLogo className="w-20 h-20 md:w-28 md:h-28 text-gray-900 dark:text-white relative z-10 drop-shadow-2xl" />
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setActiveScans(prev => prev + Math.floor(Math.random() * 2));
+        }, 5000);
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="flex-1 w-full h-full flex flex-col bg-black overflow-y-auto no-scrollbar select-none relative pb-32">
+            <SEOHead title="LOOKSMAXXKING | Free Face Rating & Glow Up AI" description="Get your professional 1-10 face rating. See your genetic potential and get a personalized plan to improve your looks instantly." />
+
+            {/* Advanced Ambient Background */}
+            <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[140%] h-[40%] bg-amber-500/10 blur-[120px] pointer-events-none rounded-full animate-pulse-amber"></div>
+
+            {/* TOP STATUS BAR */}
+            <div className="flex-none py-4 flex flex-col items-center justify-center text-center relative z-10">
+                <div className="px-3 py-1 rounded-full border border-amber-500/20 bg-amber-500/5 backdrop-blur-md">
+                    <p className="text-amber-500 text-[7px] xs:text-[9px] font-black uppercase tracking-[0.4em] animate-pulse italic leading-none">
+                        ASCEND TO YOUR PEAK VERSION
+                    </p>
+                </div>
             </div>
 
-            <div className="inline-flex items-center gap-2 mb-8 px-5 py-2 rounded-full border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-900/10 text-[10px] md:text-xs uppercase tracking-[0.2em] text-amber-700 dark:text-amber-400 font-bold shadow-sm backdrop-blur-sm">
-                <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-                </span>
-                Aesthetic Intelligence Platform
-            </div>
-
-            <h1 className="text-[12vw] sm:text-7xl md:text-8xl lg:text-9xl font-black mb-6 leading-[0.9] tracking-tighter text-gray-900 dark:text-white">
-                ASCEND TO <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-yellow-300 to-amber-600 drop-shadow-sm">
-                ROYALTY
-                </span>
-            </h1>
-            
-            <p className="text-base md:text-xl text-gray-600 dark:text-zinc-400 mb-10 max-w-xl md:max-w-2xl mx-auto leading-relaxed font-light px-4">
-                Unlock your potential with advanced aesthetic intelligence. <br/>
-                Get your <span className="text-gray-900 dark:text-white font-semibold border-b-2 border-amber-500">Royal Protocol</span> and begin your transformation.
-            </p>
-            
-            <div className="flex flex-col items-center gap-6 w-full relative z-20">
-                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-sm sm:max-w-none">
-                    <Button onClick={onStart} variant="primary" className="w-full sm:w-auto text-base md:text-lg px-8 md:px-12 py-4 shadow-xl shadow-amber-500/20 hover:shadow-amber-500/30">
-                        {userProfile ? 'Begin Ascension' : 'Start Analysis'}
-                    </Button>
-                    {userProfile ? (
-                        <Button onClick={onOpenCoach} variant="secondary" className="w-full sm:w-auto text-base md:text-lg px-8 md:px-12 py-4">
-                            Daily Protocol
-                        </Button>
+            {/* BRAND HERO */}
+            <div className="flex-none min-h-[120px] py-10 flex flex-col items-center justify-center text-center relative z-10 px-6">
+                <h1 className="text-[10vw] xs:text-[9vw] md:text-[42px] font-[1000] leading-[0.8] tracking-tighter text-white uppercase italic drop-shadow-[0_20px_50px_rgba(0,0,0,1)]">
+                    {variant === 'A' ? (
+                        <>BECOME THE<br />LOOKSMAXX<span className="text-amber-500 bg-gradient-to-b from-amber-300 to-amber-600 bg-clip-text text-transparent">KING.</span></>
                     ) : (
-                        <Button onClick={onOpenSettings} variant="outline" className="w-full sm:w-auto text-base md:text-lg px-8 md:px-12 py-4">
-                            Register Profile
-                        </Button>
+                        <>UNLOCK YOUR<br />GENETIC<span className="text-amber-500 bg-gradient-to-b from-amber-300 to-amber-600 bg-clip-text text-transparent">POWER.</span></>
                     )}
-                </div>
+                </h1>
+            </div>
 
-                <div className="flex flex-col gap-2">
-                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
-                        By entering, you confirm you are 18+ years of age.
-                    </p>
-                    <p className="text-[9px] text-zinc-600 max-w-xs mx-auto leading-tight italic">
-                        This application is a professional aesthetic simulation tool. All results are generated by AI and are for informational and entertainment purposes only. Not medical advice.
-                    </p>
+            {/* LIVE ASCENSION TICKER */}
+            <div className="flex-none px-6 z-10 -mb-2">
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-full py-1.5 px-4 overflow-hidden relative">
+                    <div className="flex items-center gap-2 animate-slide-left whitespace-nowrap">
+                        {[
+                            "NEW ASCENSION: @Subject_32 just reached Warrior Rank...",
+                            "PROTOCOL UNLOCKED: Noble Pass acquired in New York...",
+                            "ELITE SCAN: 8.4/10 Structural score verified...",
+                            "NEW ASCENSION: @Subject_9 just reached Knight Rank...",
+                            "GUILD GROWTH: 12 new members joined the Elite..."
+                        ].map((text, i) => (
+                            <span key={i} className="text-[9px] font-black text-amber-500 uppercase tracking-widest flex items-center gap-2">
+                                <span className="w-1 h-1 bg-amber-500 rounded-full animate-pulse"></span>
+                                {text}
+                                <span className="mx-4 opacity-50">|</span>
+                            </span>
+                        ))}
+                    </div>
                 </div>
             </div>
 
+            {/* SOCIAL PROOF TESTIMONIALS */}
+            <div className="flex-none py-6 px-6 z-10 overflow-hidden">
+                <div className="flex gap-3 animate-scroll-x">
+                    <div className="flex-none bg-zinc-900/60 backdrop-blur-sm border border-white/5 rounded-2xl p-3 min-w-[280px]">
+                        <div className="flex items-center gap-2 mb-1">
+                            <div className="flex gap-0.5">
+                                {[...Array(5)].map((_, i) => (
+                                    <span key={i} className="text-amber-500 text-xs">★</span>
+                                ))}
+                            </div>
+                            <span className="text-[8px] font-bold text-zinc-600 uppercase">Verified User</span>
+                        </div>
+                        <p className="text-[10px] text-white font-medium italic">"Went from 5.8 to 7.2 in 6 months. This actually works."</p>
+                        <p className="text-[8px] text-zinc-600 font-bold mt-1">- Marcus, 23</p>
+                    </div>
+                    <div className="flex-none bg-zinc-900/60 backdrop-blur-sm border border-white/5 rounded-2xl p-3 min-w-[280px]">
+                        <div className="flex items-center gap-2 mb-1">
+                            <div className="flex gap-0.5">
+                                {[...Array(5)].map((_, i) => (
+                                    <span key={i} className="text-amber-500 text-xs">★</span>
+                                ))}
+                            </div>
+                            <span className="text-[8px] font-bold text-zinc-600 uppercase">Verified User</span>
+                        </div>
+                        <p className="text-[10px] text-white font-medium italic">"Finally got honest feedback. The plan is legit no cap."</p>
+                        <p className="text-[8px] text-zinc-600 font-bold mt-1">- Alex, 19</p>
+                    </div>
+                    <div className="flex-none bg-zinc-900/60 backdrop-blur-sm border border-white/5 rounded-2xl p-3 min-w-[280px]">
+                        <div className="flex items-center gap-2 mb-1">
+                            <div className="flex gap-0.5">
+                                {[...Array(5)].map((_, i) => (
+                                    <span key={i} className="text-amber-500 text-xs">★</span>
+                                ))}
+                            </div>
+                            <span className="text-[8px] font-bold text-zinc-600 uppercase">Verified User</span>
+                        </div>
+                        <p className="text-[10px] text-white font-medium italic">"Best looksmaxxing tool ever. Actually actionable advice."</p>
+                        <p className="text-[8px] text-zinc-600 font-bold mt-1">- Jordan, 21</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* ERROR MESSAGE DISPLAY */}
             {error && (
-                <div className="mt-8 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl text-red-600 dark:text-red-400 max-w-md mx-auto text-sm font-medium">
-                {error}
+                <div className="flex-none px-6 py-2 z-10 animate-fade-in">
+                    <div className="bg-gradient-to-r from-red-500/20 via-red-500/30 to-red-500/20 border border-red-500/50 rounded-2xl px-5 py-4 flex items-start gap-3 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center mt-0.5">
+                            <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div className="flex-1">
+                            <p className="text-[10px] font-black text-red-400 uppercase tracking-wider mb-1">Analysis Failed</p>
+                            <p className="text-[11px] text-red-200/90 font-medium leading-relaxed">{error}</p>
+                        </div>
+                    </div>
                 </div>
             )}
-        </div>
 
-        {/* --- REFERRAL SECTION --- */}
-        <div className="w-full max-w-5xl mx-auto px-4 py-12">
-            <div className="bg-gradient-to-br from-zinc-900 to-black border border-amber-500/30 rounded-3xl p-8 text-center relative overflow-hidden group shadow-2xl">
-                 <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 blur-[80px] rounded-full group-hover:bg-amber-500/10 transition-colors"></div>
-                 <h2 className="text-2xl md:text-4xl font-black text-white mb-4 tracking-tight uppercase italic">
-                    Invite Allies. <span className="text-amber-500">Earn Scans.</span>
-                 </h2>
-                 <p className="text-zinc-400 max-w-2xl mx-auto mb-8 text-sm md:text-base leading-relaxed">
-                    Growth is exponential when shared. Allies use your code for 2 free credits; you earn 1 credit for every joining alliance.
-                 </p>
-                 <div className="flex justify-center">
-                    <button 
-                        onClick={onOpenSettings}
-                        className="bg-amber-500 text-black px-10 py-3 rounded-full font-black uppercase tracking-widest hover:bg-amber-400 transition-all hover:scale-105 shadow-[0_0_30px_rgba(245,158,11,0.3)]"
+            {/* URGENCY BANNER */}
+            <div className="flex-none px-6 py-2 z-10">
+                <div className="bg-gradient-to-r from-red-500/10 via-red-500/20 to-red-500/10 border border-red-500/30 rounded-xl px-4 py-2 flex items-center justify-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                    <p className="text-[9px] font-black text-red-500/90 uppercase tracking-wider italic">
+                        Limited: 10 Free Scans/Month • Act Now
+                    </p>
+                </div>
+            </div>
+
+            {/* THE START BUTTON */}
+            <div className="flex-none py-10 flex items-center justify-center px-6 z-20">
+                <button
+                    onClick={onStart}
+                    className="group relative w-full min-h-[120px] max-h-[150px] flex flex-col items-center justify-center bg-white hover:bg-amber-400 text-black rounded-[3rem] shadow-[0_30px_70px_-10px_rgba(255,255,255,0.15)] active:scale-[0.97] transition-all duration-500 overflow-hidden border-none"
+                >
+                    <div className="absolute inset-0 bg-gradient-to-br from-white via-zinc-100 to-zinc-200 opacity-40"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/80 to-transparent -translate-x-full group-hover:animate-shimmer pointer-events-none"></div>
+
+                    <div className="relative z-10 flex flex-col items-center text-center p-4">
+                        <span className="text-[6.5vw] xs:text-3xl md:text-3xl font-[1000] uppercase italic tracking-tighter leading-tight mb-1 transition-transform duration-500 group-hover:scale-105">
+                            GET FREE RATING
+                        </span>
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-black animate-pulse"></div>
+                            <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-70 italic">
+                                START YOUR GLOW UP JOURNEY
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </div>
+
+            {/* FEATURES GRID */}
+            <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-3 p-4 z-10 mb-4">
+
+                <div className="bg-zinc-900/50 backdrop-blur-xl border border-white/5 rounded-[2rem] p-4 flex flex-col justify-between overflow-hidden relative group cursor-default transition-all hover:border-amber-500/40 hover:bg-zinc-900/80 shadow-xl">
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-1.5 mb-1">
+                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                            <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest leading-none italic">ACCURATE RATING</p>
+                        </div>
+                        <h4 className="text-xl font-[1000] text-white italic leading-none uppercase tracking-tighter">1-10<br />SCORE</h4>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase leading-tight tracking-tight relative z-10 italic">True genetic assessment of your features.</p>
+                </div>
+
+                <div className="bg-zinc-900/50 backdrop-blur-xl border border-white/5 rounded-[2rem] p-4 flex flex-col justify-between overflow-hidden relative group cursor-default transition-all hover:border-emerald-500/40 hover:bg-zinc-900/80 shadow-xl">
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-1.5 mb-1">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                            <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-none italic">GENETIC PEAK</p>
+                        </div>
+                        <h4 className="text-xl font-[1000] text-white italic leading-none uppercase tracking-tighter">SEE THE<br />PEAK</h4>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase leading-tight tracking-tight relative z-10 italic">Visualize exactly what you'd look like as a 10/10.</p>
+                </div>
+
+                <div className="bg-zinc-900/50 backdrop-blur-xl border border-white/5 rounded-[2rem] p-4 flex flex-col justify-between overflow-hidden relative group cursor-default transition-all hover:border-red-500/40 hover:bg-zinc-900/80 shadow-xl">
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-1.5 mb-1">
+                            <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                            <p className="text-[8px] font-black text-red-500 uppercase tracking-widest leading-none italic">SOLUTIONS</p>
+                        </div>
+                        <h4 className="text-xl font-[1000] text-white italic leading-none uppercase tracking-tighter">FIX YOUR<br />FLAWS</h4>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase leading-tight tracking-tight relative z-10 italic">Get the items you need to fix your skin, jaw, and eyes.</p>
+                </div>
+
+                <div className="bg-zinc-900/50 backdrop-blur-xl border border-white/5 rounded-[2rem] p-4 flex flex-col justify-between overflow-hidden relative group cursor-default transition-all hover:border-blue-500/40 hover:bg-zinc-900/80 shadow-xl">
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-1.5 mb-1">
+                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                            <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest leading-none italic">ROI</p>
+                        </div>
+                        <h4 className="text-xl font-[1000] text-white italic leading-none uppercase tracking-tighter">SOCIAL<br />ADVANTAGE</h4>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase leading-tight tracking-tight relative z-10 italic">Dominate social situations with an improved aura.</p>
+                </div>
+
+            </div>
+
+            {/* KNOWLEDGE PREVIEW (SEO HOOK) */}
+            <div className="flex-none px-6 py-8 z-10 border-t border-white/5">
+                <div className="flex justify-between items-end mb-6">
+                    <div>
+                        <p className="text-[8px] font-black text-amber-500 uppercase tracking-[0.4em] mb-1 italic">The King's Archive</p>
+                        <h3 className="text-2xl font-[1000] text-white italic uppercase tracking-tighter">AESTHETIC<br />PROTOCOL</h3>
+                    </div>
+                </div>
+                <div className="space-y-3">
+                    <div
+                        onClick={onOpenBlog}
+                        className="group bg-zinc-900/30 border border-white/5 rounded-2xl p-4 flex justify-between items-center hover:bg-zinc-800/50 transition-colors cursor-pointer"
                     >
-                        ACCESS INVITE CODE
-                    </button>
-                 </div>
+                        <div>
+                            <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">Mewing Protocol</p>
+                            <h4 className="text-sm font-bold text-white italic">How to fix facial asymmetry in 30 days.</h4>
+                        </div>
+                        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-black transition-all">
+                            →
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        {/* --- FEATURES GRID --- */}
-        <div className="w-full max-w-5xl mx-auto px-4 py-20 border-t border-gray-100 dark:border-zinc-800/50">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="bg-gray-50 dark:bg-zinc-900 p-8 rounded-3xl border border-transparent hover:border-amber-500/20 transition-colors shadow-sm">
-                    <div className="text-4xl mb-4">👁️</div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 uppercase">Eye Area</h3>
-                    <p className="text-sm text-gray-600 dark:text-zinc-400 leading-relaxed">
-                        Simulation of <strong>Canthal Tilt</strong> and orbital metrics. Discover your aesthetic profile.
-                    </p>
+            {/* FAQ SECTION */}
+            <div className="flex-none px-6 py-6 z-10">
+                <FAQSection />
+            </div>
+
+            {/* AFFILIATE LINK */}
+            <div className="flex-none px-6 py-4 z-10 text-center">
+                <button
+                    onClick={onOpenAffiliate}
+                    className="text-[9px] font-black text-amber-500 uppercase tracking-[0.3em] italic hover:opacity-70 transition-all border border-amber-500/10 bg-amber-500/5 rounded-full px-8 py-2.5"
+                >
+                    JOIN THE EMPIRE • BECOME AN AFFILIATE
+                </button>
+            </div>
+
+            {/* TRUST BADGES */}
+            <div className="flex-none px-6 py-3 z-10 border-t border-white/5">
+                <div className="flex items-center justify-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-zinc-900/40 rounded-full border border-white/5">
+                        <svg className="w-3 h-3 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <span className="text-[8px] font-bold text-zinc-400 uppercase">100% Private</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-zinc-900/40 rounded-full border border-white/5">
+                        <svg className="w-3 h-3 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                        </svg>
+                        <span className="text-[8px] font-bold text-zinc-400 uppercase">No Spam Ever</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-zinc-900/40 rounded-full border border-white/5">
+                        <svg className="w-3 h-3 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <span className="text-[8px] font-bold text-zinc-400 uppercase">AI-Verified Results</span>
+                    </div>
                 </div>
-                <div className="bg-gray-50 dark:bg-zinc-900 p-8 rounded-3xl border border-transparent hover:border-amber-500/20 transition-colors shadow-sm">
-                    <div className="text-4xl mb-4">📐</div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 uppercase">Structure</h3>
-                    <p className="text-sm text-gray-600 dark:text-zinc-400 leading-relaxed">
-                        Advanced measurement of <strong>Craniofacial Growth</strong>. Identify structural benchmarks.
-                    </p>
+            </div>
+
+            {/* BOTTOM FOOTER */}
+            <div className="flex-none h-10 flex justify-between items-center px-8 z-10 mb-[env(safe-area-inset-bottom)] border-t border-white/5 bg-black/60 backdrop-blur-xl">
+                <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse"></div>
+                    <span className="text-[7.5px] xs:text-[9px] font-black text-zinc-600 uppercase tracking-widest leading-none italic">
+                        {activeScans.toLocaleString()} PEOPLE GLOWING UP TODAY
+                    </span>
                 </div>
-                <div className="bg-gray-50 dark:bg-zinc-900 p-8 rounded-3xl border border-transparent hover:border-amber-500/20 transition-colors shadow-sm">
-                    <div className="text-4xl mb-4">✨</div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 uppercase">Grooming</h3>
-                    <p className="text-sm text-gray-600 dark:text-zinc-400 leading-relaxed">
-                        Skin vitality assessment and style simulations based on facial harmonics.
-                    </p>
+                <div className="flex items-center gap-2">
+                    <CrownLogo className="w-3.5 h-3.5 text-amber-500/50" />
+                    <span className="text-[9px] font-black text-white uppercase italic tracking-widest leading-none">
+                        LOOKSMAXX<span className="text-amber-500/70">KING</span>
+                    </span>
                 </div>
             </div>
         </div>
-    </div>
-  );
+    );
 };

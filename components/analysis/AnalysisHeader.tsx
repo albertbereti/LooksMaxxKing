@@ -1,10 +1,8 @@
-
 import React, { useState } from 'react';
 import { LooksAnalysis } from '../../types';
 import { Button } from '../Button';
 import { CrownLogo } from '../CrownLogo';
 import { getScoreColor, getTier } from '../../utils/analysisUtils';
-import { ScoreEnergyDashboard } from './ScoreEnergyDashboard';
 
 interface AnalysisHeaderProps {
   analysis: LooksAnalysis;
@@ -33,111 +31,79 @@ export const AnalysisHeader: React.FC<AnalysisHeaderProps> = ({
   const tier = getTier(analysis.overallScore);
   const activePotentialImage = viewMode === 'softmax' ? softmaxImage : hardmaxxImage;
 
+  // Find the highest impact flaw for the "Big Fix" highlight
+  const bigFix = analysis.flaws.sort((a, b) => (a.impact === 'High' ? -1 : 1))[0];
+
   return (
-    <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl rounded-[2rem] border border-gray-200 dark:border-zinc-800 overflow-hidden shadow-2xl relative">
-        <div className={`absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r ${tier.color.split(' ')[0]} ${tier.color.split(' ')[2]}`}></div>
-        <div className="absolute -top-10 -right-10 text-gray-100 dark:text-zinc-800 opacity-30 transform rotate-12 pointer-events-none">
-            <CrownLogo className="w-64 h-64 md:w-96 md:h-96" />
+    <div className="w-full space-y-6">
+        {/* Cinematic Score Reveal */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-[3.5rem] p-8 md:p-14 shadow-2xl relative overflow-hidden group">
+            <div className={`absolute top-0 left-0 w-full h-2 bg-gradient-to-r ${tier.color.split(' ')[0]} ${tier.color.split(' ')[2]}`}></div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-14 items-center relative z-10">
+                <div className="flex flex-col items-center md:items-start text-center md:text-left space-y-8">
+                    <div className="space-y-2">
+                        <span className="text-zinc-600 font-black uppercase text-[11px] tracking-[0.5em]">SOVEREIGN RATING</span>
+                        <div className={`text-[10rem] md:text-[12rem] font-black leading-none tracking-tighter ${getScoreColor(analysis.overallScore)}`}>
+                            {analysis.overallScore.toFixed(1)}
+                        </div>
+                        <div className={`inline-block bg-gradient-to-r ${tier.color} px-8 py-3 rounded-full font-black text-xs uppercase tracking-[0.3em] shadow-2xl border border-white/20`}>
+                            {tier.label} STATUS
+                        </div>
+                    </div>
+                    
+                    <p className="text-zinc-400 text-xl italic font-black leading-tight max-w-sm uppercase tracking-tight">
+                        "{analysis.summary}"
+                    </p>
+
+                    <div className="pt-6 flex gap-6">
+                        <div className="text-center px-8 py-5 bg-black/60 rounded-[2rem] border border-zinc-800">
+                            <p className="text-[10px] font-black text-zinc-600 uppercase mb-2 tracking-widest">Target Status</p>
+                            <p className="text-3xl font-black text-amber-500">{analysis.potentialScore.toFixed(1)}</p>
+                        </div>
+                        <div className="text-center px-8 py-5 bg-black/60 rounded-[2rem] border border-zinc-800">
+                            <p className="text-[10px] font-black text-zinc-600 uppercase mb-2 tracking-widest">Evolution Cycle</p>
+                            <p className="text-3xl font-black text-white">{analysis.estimatedDaysToPotential}D</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="relative flex justify-center">
+                    <div className="relative w-72 h-72 md:w-96 md:h-96">
+                         <div className="absolute inset-0 bg-amber-500 blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity rounded-full"></div>
+                         <div 
+                            className="w-full h-full rounded-full border-8 border-zinc-800 p-2 bg-zinc-900 shadow-[0_0_80px_rgba(0,0,0,0.8)] relative z-10 overflow-hidden cursor-zoom-in group-hover:scale-[1.03] transition-transform"
+                            onClick={() => imageData && onFullScreen(imageData)}
+                         >
+                            <img src={imageData || ''} className="w-full h-full object-cover rounded-full grayscale brightness-[0.6] group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-1000" alt="Asset" />
+                         </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div className="relative p-6 md:p-10 z-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center justify-center mb-8">
-                {/* Current Reality */}
-                <div className="flex flex-col items-center">
-                    <div 
-                        className="w-32 h-32 md:w-48 md:h-48 rounded-full p-1 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 shadow-xl relative overflow-hidden flex items-center justify-center mb-6 cursor-zoom-in hover:scale-105 transition-transform group"
-                        onClick={() => imageData && onFullScreen(imageData)}
-                    >
-                        <img src={imageData || ''} alt="Current" className="w-full h-full object-cover rounded-full" />
-                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-white">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
-                            </svg>
-                        </div>
-                        <div className={`absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-br ${tier.color} text-[10px] md:text-xs font-black px-3 py-1 rounded-full shadow-lg uppercase tracking-wider border-2 border-white dark:border-black whitespace-nowrap z-20`}>
-                            {tier.label}
-                        </div>
-                    </div>
-                    <div className="text-center">
-                        <h2 className="text-gray-500 dark:text-zinc-500 uppercase tracking-[0.2em] text-[10px] md:text-xs font-bold mb-1">Current Reality</h2>
-                        <div className={`text-5xl md:text-7xl font-black tracking-tighter ${getScoreColor(analysis.overallScore)}`}>{analysis.overallScore.toFixed(1)}</div>
-                    </div>
+        {/* The "Primary Lever" - Strategic Action */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2 bg-gradient-to-br from-amber-500 to-amber-700 p-10 rounded-[3rem] flex flex-col md:flex-row justify-between items-center gap-8 shadow-2xl relative overflow-hidden group/lever">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
+                <div className="relative z-10 text-center md:text-left">
+                    <span className="text-black font-black uppercase text-[11px] tracking-[0.4em] mb-3 block">URGENT STRUCTURAL CORRECTION</span>
+                    <h3 className="text-4xl font-black text-black uppercase italic tracking-tighter mb-2 leading-none">{bigFix.label}</h3>
+                    <p className="text-black/80 text-sm font-black uppercase tracking-widest">Protocol: {bigFix.howToFix}</p>
                 </div>
-
-                {/* Vertical Divider / VS */}
-                <div className="hidden md:flex flex-col items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20 pointer-events-none">
-                     <span className="text-xs font-black">VS</span>
-                </div>
-
-                {/* Peak Potential */}
-                <div className="flex flex-col items-center">
-                     <div 
-                        className={`w-32 h-32 md:w-48 md:h-48 rounded-full p-1 bg-gradient-to-br ${viewMode === 'softmax' ? 'from-amber-200 to-amber-600' : 'from-red-500 to-amber-600'} shadow-2xl relative overflow-hidden mb-6 ${activePotentialImage ? 'cursor-zoom-in hover:scale-105 transition-transform group' : ''}`}
-                        onClick={() => activePotentialImage && onFullScreen(activePotentialImage)}
-                     >
-                             <div className="w-full h-full bg-black rounded-full overflow-hidden relative flex items-center justify-center">
-                                {activePotentialImage ? (
-                                    <>
-                                        <img src={activePotentialImage} alt="Potential" className="w-full h-full object-cover object-center animate-fade-in" />
-                                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-full">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-white">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
-                                            </svg>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="flex flex-col items-center gap-2">
-                                        {isGenerating && activeOperation === viewMode ? (
-                                             <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-                                        ) : (
-                                            <button 
-                                                onClick={() => onGenerate(viewMode)}
-                                                className="text-[10px] text-white font-black uppercase tracking-widest hover:text-amber-500 transition-colors bg-white/10 px-4 py-2 rounded-full"
-                                            >
-                                                Visualize Ascension
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-                             </div>
-                        <div className={`absolute -bottom-2 left-1/2 -translate-x-1/2 ${viewMode === 'softmax' ? 'bg-amber-500 text-black' : 'bg-red-600 text-white'} text-[10px] md:text-xs font-black px-4 py-1.5 rounded-full shadow-lg uppercase tracking-wider border-2 border-white whitespace-nowrap z-20 flex items-center gap-1`}>
-                            <CrownLogo className="w-3 h-3" /> {viewMode === 'softmax' ? 'SOFTMAXXED' : 'HARDMAXXED'}
-                        </div>
-                    </div>
-                    <div className="text-center">
-                        <div className="flex items-center justify-center gap-1 mb-2 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg">
-                            <button 
-                                onClick={() => setViewMode('softmax')}
-                                className={`text-[9px] font-black px-3 py-1 rounded-md transition-all ${viewMode === 'softmax' ? 'bg-amber-500 text-black shadow-md' : 'text-zinc-500 hover:text-zinc-300'}`}
-                            >
-                                SOFTMAXX
-                            </button>
-                            <button 
-                                onClick={() => setViewMode('hardmaxx')}
-                                className={`text-[9px] font-black px-3 py-1 rounded-md transition-all ${viewMode === 'hardmaxx' ? 'bg-red-600 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300'}`}
-                            >
-                                HARDMAXX
-                            </button>
-                        </div>
-                        <div className="text-5xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-amber-300 to-amber-600">
-                            {viewMode === 'softmax' ? (analysis.potentialScore * 0.95).toFixed(1) : analysis.potentialScore.toFixed(1)}
-                        </div>
-                    </div>
-                </div>
+                <button 
+                    onClick={() => onGenerate('softmax')} 
+                    className="relative z-10 bg-white text-black border-none px-10 py-5 text-xs font-black uppercase italic tracking-widest hover:scale-105 active:scale-95 transition-all shadow-3xl rounded-2xl group-hover/lever:bg-zinc-900 group-hover/lever:text-white"
+                >
+                    VISUALIZE ASCENSION
+                </button>
             </div>
 
-            <div className="max-w-3xl mx-auto text-center relative mb-8 px-4">
-                <p className="text-lg md:text-xl text-gray-700 dark:text-zinc-300 leading-relaxed font-medium">
-                    {viewMode === 'softmax' 
-                        ? "Your peak natural potential using elite grooming and debloating." 
-                        : "Your ultimate genetic limit achieved through anatomical reconstruction."}
-                </p>
-            </div>
-
-            <ScoreEnergyDashboard analysis={analysis} />
-
-            <div className="mt-8 flex flex-wrap justify-center gap-4">
-                <Button onClick={onRetake} variant="secondary" className="text-xs md:text-sm py-2 px-6">Analysis Archive</Button>
+            <div className="bg-zinc-900 border border-zinc-800 p-10 rounded-[3rem] flex flex-col items-center justify-center text-center group hover:border-amber-500/30 transition-all cursor-pointer shadow-xl" onClick={onRetake}>
+                 <div className="w-16 h-16 bg-zinc-800 rounded-2xl flex items-center justify-center mb-5 border border-zinc-700 group-hover:bg-amber-500 group-hover:text-black transition-all">
+                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                 </div>
+                 <p className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.3em] group-hover:text-white transition-colors">NEW AUDIT</p>
             </div>
         </div>
     </div>

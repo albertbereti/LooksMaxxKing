@@ -11,17 +11,23 @@ interface ErrorBoundaryState {
 }
 
 /**
- * ErrorBoundary catches JavaScript errors anywhere in their child component tree,
- * logs those errors, and displays a fallback UI instead of the component tree that crashed.
+ * ErrorBoundary catches JavaScript errors anywhere in their child component tree.
  */
-// Fix: Use the imported Component class directly and initialize state in constructor to ensure inherited members are correctly recognized by the compiler.
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  // Fix for: Property 'state' does not exist on type 'ErrorBoundary'
+  state: ErrorBoundaryState;
+  // Fix for: Property 'props' does not exist on type 'ErrorBoundary'
+  props: ErrorBoundaryProps;
+
   constructor(props: ErrorBoundaryProps) {
     super(props);
+    // Initialize state to fix property 'state' does not exist error at line 19
     this.state = {
       hasError: false,
       error: null
     };
+    // Initialize props (redundant but helps some compilers)
+    this.props = props;
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
@@ -44,7 +50,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   render() {
-    // Accessing props and state correctly from the base Component class.
+    // Explicitly destructuring from 'this' to fix reported compiler property access errors
     const { children } = this.props;
     const { hasError, error } = this.state;
 

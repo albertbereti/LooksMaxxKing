@@ -1,0 +1,38 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. User profiles - only owners can read/write their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // 2. Leads - only for new signups
+    match /leads/{leadId} {
+      allow create: if true; // Allow anonymous lead capture
+      allow read, write: if false; // Security: only backend should read/update leads
+    }
+
+    // 3. Referrals - Allow creation by any authenticated user
+    match /referrals/{referralId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if false;
+    }
+
+    // 4. Affiliate Data
+    match /affiliate_commissions/{commissionId} {
+      // Allow users to see their own commissions
+      allow read: if request.auth != null && resource.data.referrerEmail == request.auth.token.email;
+    }
+
+    match /affiliate_stats/leaderboard {
+      // Publicly readable leaderboard
+      allow read: if true;
+    }
+
+    // 5. Global deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

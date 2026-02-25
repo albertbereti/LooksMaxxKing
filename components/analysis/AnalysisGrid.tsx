@@ -8,10 +8,12 @@ interface AnalysisGridProps {
 }
 
 const CategoryCard = ({ title, data }: { title: string, data: SubAnalysis }) => {
+    const isDeficient = data.score < 7;
     
     const handleProductClick = (productName: string) => {
-        if (typeof window !== 'undefined' && window.fbq) {
-            window.fbq('trackCustom', 'AmazonAffiliateClick', { 
+        // Fix for: Property 'fbq' does not exist on type 'Window'
+        if (typeof window !== 'undefined' && (window as any).fbq) {
+            (window as any).fbq('trackCustom', 'AmazonAffiliateClick', { 
                 product_name: productName,
                 category: title 
             });
@@ -19,12 +21,22 @@ const CategoryCard = ({ title, data }: { title: string, data: SubAnalysis }) => 
     };
 
     return (
-        <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-gray-200 dark:border-zinc-800 shadow-sm flex flex-col h-full">
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-gray-900 dark:text-white">{title}</h3>
-                <span className={`text-xl font-black ${getScoreColor(data.score)}`}>{data.score.toFixed(1)}/10</span>
+        <div className="bg-zinc-950 p-8 rounded-[2.5rem] border border-white/5 shadow-2xl flex flex-col h-full relative overflow-hidden group">
+            {isDeficient && <div className="absolute top-0 right-0 w-24 h-24 bg-red-600/5 blur-2xl rounded-full"></div>}
+            
+            <div className="flex justify-between items-start mb-8 relative z-10">
+                <div>
+                    <h3 className="font-black text-white text-lg uppercase italic tracking-tight mb-1">{title}</h3>
+                    <span className={`text-[8px] font-black px-2 py-0.5 rounded-full border uppercase tracking-widest ${isDeficient ? 'text-red-500 border-red-500/20 bg-red-500/10' : 'text-emerald-500 border-emerald-500/20 bg-emerald-500/10'}`}>
+                        {isDeficient ? 'Sub-Threshold' : 'Optimized'}
+                    </span>
+                </div>
+                <div className="text-right">
+                    <span className={`text-4xl font-black italic tracking-tighter ${getScoreColor(data.score)}`}>{data.score.toFixed(1)}</span>
+                </div>
             </div>
-            <div className="space-y-2 flex-grow">
+
+            <div className="space-y-3 flex-grow relative z-10">
                 {data.products.map((prod, i) => (
                     <a 
                         key={i} 
@@ -32,13 +44,13 @@ const CategoryCard = ({ title, data }: { title: string, data: SubAnalysis }) => 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         onClick={() => handleProductClick(prod.name)}
-                        className="block p-3 bg-gray-50 dark:bg-zinc-800 rounded-xl hover:bg-blue-50 dark:hover:bg-zinc-700 transition-colors group"
+                        className="block p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 hover:border-white/20 transition-all group/item"
                     >
-                        <div className="flex justify-between items-center">
-                            <span className="font-bold text-sm text-gray-900 dark:text-white group-hover:text-blue-600 line-clamp-2">{prod.name}</span>
+                        <div className="flex justify-between items-center mb-3">
+                            <span className="font-black text-[10px] text-zinc-400 uppercase tracking-widest group-hover/item:text-white transition-colors">{prod.name}</span>
                         </div>
-                        <div className="w-full mt-2 py-1.5 text-[10px] font-bold uppercase tracking-widest bg-blue-600 text-white rounded-lg group-hover:bg-blue-700 transition-colors text-center">
-                            ACQUIRE
+                        <div className="w-full py-2.5 text-[9px] font-black uppercase tracking-[0.2em] bg-white text-black rounded-xl group-hover/item:bg-amber-500 transition-colors text-center italic">
+                            PROHIBIT LEAKAGE
                         </div>
                     </a>
                 ))}
@@ -52,8 +64,7 @@ export const AnalysisGrid: React.FC<AnalysisGridProps> = ({ analysis }) => {
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-4">
         <CategoryCard title="Skin Vitality" data={analysis.skinAnalysis} />
         <CategoryCard title="Eye Dominance" data={analysis.eyeAnalysis} />
-        <CategoryCard title="Hair Quality" data={analysis.hairAnalysis} />
-        {/* Can add Beard, Jaw, etc here if design allows */}
+        <CategoryCard title="Follicle Density" data={analysis.hairAnalysis} />
     </div>
   );
 };

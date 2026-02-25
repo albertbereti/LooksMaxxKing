@@ -1,56 +1,120 @@
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-import { LooksAnalysis, ChatMessage } from "../types";
+
+import { GoogleGenAI, GenerateContentResponse, Type, HarmCategory, HarmBlockThreshold } from "@google/genai";
+import { LooksAnalysis } from "../types";
 import { ANALYSIS_SCHEMA } from "./analysisSchema";
-import { AI_MODELS } from "../config";
 import { getSystemPrompts } from "./prompts";
 import { getUserProfile } from "./historyService";
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function retryWithBackoff<T>(fn: () => Promise<T>, retries = 3, initialDelay = 2000): Promise<T> {
+// Custom error class for better error handling
+export type AnalysisErrorType = 'quota_exceeded' | 'content_filter' | 'api_key_invalid' | 'network_error' | 'unknown';
+
+export class AnalysisError extends Error {
+  type: AnalysisErrorType;
+  userMessage: string;
+
+  constructor(type: AnalysisErrorType, technicalMessage: string, userMessage: string) {
+    super(technicalMessage);
+    this.type = type;
+    this.userMessage = userMessage;
+    this.name = 'AnalysisError';
+  }
+}
+
+function categorizeError(error: any): AnalysisError {
+  const msg = (error?.message || '').toLowerCase();
+  const status = error?.status || error?.code || '';
+
+  // Check for quota/rate limit issues
+  if (msg.includes('quota') || msg.includes('rate limit') || msg.includes('resource exhausted') || status === 429) {
+    return new AnalysisError(
+      'quota_exceeded',
+      error.message,
+      'Our AI is experiencing high demand. Please try again in a few minutes.'
+    );
+  }
+
+  // Check for content filter/safety issues
+  if (msg.includes('safety') || msg.includes('blocked') || msg.includes('content') || msg.includes('filter') || msg.includes('harm')) {
+    return new AnalysisError(
+      'content_filter',
+      error.message,
+      'Unable to analyze image. Please ensure your face is clearly visible and try a different photo.'
+    );
+  }
+
+  // Check for API key issues
+  if (msg.includes('api key') || msg.includes('invalid') || msg.includes('unauthorized') || msg.includes('authentication') || status === 401 || status === 403) {
+    return new AnalysisError(
+      'api_key_invalid',
+      error.message,
+      'Service temporarily unavailable. Our team has been notified.'
+    );
+  }
+
+  // Check for network issues
+  if (msg.includes('network') || msg.includes('fetch') || msg.includes('connection') || msg.includes('timeout') || !navigator.onLine) {
+    return new AnalysisError(
+      'network_error',
+      error.message,
+      'Connection issue detected. Please check your internet and try again.'
+    );
+  }
+
+  // Unknown error
+  return new AnalysisError(
+    'unknown',
+    error.message || 'Unknown error occurred',
+    'Something went wrong. Please try again or use a different photo.'
+  );
+}
+
+async function retryWithBackoff<T>(fn: () => Promise<T>, retries = 3, initialDelay = 1000): Promise<T> {
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
-    throw new Error("No internet connection. Please check your network and try again.");
+    throw new AnalysisError('network_error', 'No internet connection', 'No internet connection. Please check your network and try again.');
   }
   let currentDelay = initialDelay;
-  for (let i = 0; i < retries; i++) {
+  let lastError: any;
+
+  for (let i = 0; i <= retries; i++) {
     try {
       return await fn();
     } catch (error: any) {
-      const status = error?.status || error?.response?.status || error?.error?.code || error?.code;
-      const message = (error?.message || error?.error?.message || '').toLowerCase();
-      const isQuota = status === 429 || message.includes('quota') || message.includes('limit');
-      if (isQuota) throw new Error("Daily AI usage limit reached. Please try again tomorrow.");
-      const isOverloaded = status === 503 || status === 500 || status === 502 || status === 504 || message.includes('overloaded') || message.includes('unavailable');
-      if (!isOverloaded || i === retries - 1) throw error;
+      lastError = error;
+      const errorMsg = error?.message || "";
+
+      // Don't retry for content filter or auth errors
+      if (errorMsg.includes('safety') || errorMsg.includes('blocked') || errorMsg.includes('unauthorized')) {
+        throw error;
+      }
+
+      if (errorMsg.includes("Requested entity was not found.") && (window as any).aistudio) {
+        (window as any).aistudio.openSelectKey();
+      }
+      if (i === retries) throw error;
+      console.log(`Retry attempt ${i + 1}/${retries} after ${currentDelay}ms...`);
       await wait(currentDelay);
-      currentDelay = Math.min(currentDelay * 1.5, 10000);
+      currentDelay *= 1.5;
     }
   }
-  throw new Error("Request failed after max retries");
+  throw lastError;
 }
-
-async function ensureKey() {
-    if (typeof window !== 'undefined' && window.aistudio) {
-        const hasKey = await window.aistudio.hasSelectedApiKey();
-        if (!hasKey) {
-            await window.aistudio.openSelectKey();
-        }
-    }
-}
-
-const getUserLanguage = () => {
-    const profile = getUserProfile();
-    return profile?.language || (typeof navigator !== 'undefined' ? navigator.language : 'English');
-};
 
 export const analyzeFace = async (base64Image: string): Promise<LooksAnalysis> => {
   try {
-    await ensureKey();
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
-    const prompts = getSystemPrompts(getUserLanguage());
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) {
+      throw new AnalysisError('api_key_invalid', 'API key not configured', 'Service configuration error. Please contact support.');
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+    const base64Data = base64Image.includes('base64,') ? base64Image.split('base64,')[1] : base64Image;
+    const profile = getUserProfile();
+    const prompts = getSystemPrompts(profile?.language || 'English');
+
     const response = await retryWithBackoff<GenerateContentResponse>(() => ai.models.generateContent({
-      model: AI_MODELS.TEXT_ANALYSIS,
+      model: 'gemini-3-flash-preview',
       contents: {
         parts: [
           { inlineData: { mimeType: "image/jpeg", data: base64Data } },
@@ -61,134 +125,236 @@ export const analyzeFace = async (base64Image: string): Promise<LooksAnalysis> =
         systemInstruction: prompts.ANALYSIS_SYSTEM_INSTRUCTION,
         responseMimeType: "application/json",
         responseSchema: ANALYSIS_SCHEMA,
-        temperature: 0.5,
+        temperature: 0.1,
+        thinkingConfig: { thinkingBudget: 0 },
+        safetySettings: [
+          { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+          { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+          { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+          { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+        ]
       },
     }));
-    if (!response.text) throw new Error("No response from AI");
-    try {
-        return JSON.parse(response.text) as LooksAnalysis;
-    } catch (e) {
-        const match = response.text.match(/```json([\s\S]*?)```/);
-        if (match && match[1]) return JSON.parse(match[1]) as LooksAnalysis;
-        throw new Error("Invalid AI response format");
+
+    const responseText = response.text;
+    if (!responseText) {
+      throw new AnalysisError('unknown', 'Empty response from API', 'Analysis failed. Please try again with a different photo.');
     }
-  } catch (error) {
-    console.error("Analysis failed:", error);
-    throw error;
+    return JSON.parse(responseText) as LooksAnalysis;
+  } catch (error: any) {
+    console.error("Critical Audit Failure:", error);
+
+    // Re-throw if already an AnalysisError
+    if (error instanceof AnalysisError) {
+      throw error;
+    }
+
+    // Categorize and throw appropriate error
+    throw categorizeError(error);
   }
 };
 
-export const generateOptimalImage = async (base64Image: string, archetype: 'softmax' | 'hardmaxx' | 'titan' | 'icon' = 'softmax'): Promise<string> => {
+export const generateStyleSim = async (base64Image: string, prompt: string): Promise<string | null> => {
   try {
-    await ensureKey();
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
-    const prompts = getSystemPrompts('English');
-    let prompt = "";
-    if (archetype === 'softmax') prompt = prompts.IMAGE_GENERATION.SOFTMAXX;
-    else if (archetype === 'hardmaxx') prompt = prompts.IMAGE_GENERATION.HARDMAXX;
-    else if (archetype === 'titan') prompt = prompts.IMAGE_GENERATION.TITAN;
-    else if (archetype === 'icon') prompt = prompts.IMAGE_GENERATION.ICON;
-    
-    const response = await retryWithBackoff<GenerateContentResponse>(() => ai.models.generateContent({
-      model: AI_MODELS.IMAGE_GENERATION,
-      contents: { parts: [{ inlineData: { mimeType: "image/jpeg", data: base64Data } }, { text: prompt }] },
-      config: { imageConfig: { aspectRatio: "1:1", imageSize: "1K" } },
-    }));
-    for (const part of response.candidates?.[0]?.content?.parts || []) {
-      if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
-    }
-    throw new Error("No image generated.");
-  } catch (error) { throw error; }
-};
+    const base64Data = base64Image.includes('base64,') ? base64Image.split('base64,')[1] : base64Image;
 
-export const generateStyleInspiration = async (base64Image: string, category: 'hair' | 'fashion' | 'grooming'): Promise<string> => {
-  try {
-      await ensureKey();
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
-      const prompts = getSystemPrompts('English');
-      let prompt = "";
-      if (category === 'hair') prompt = prompts.STYLE_GENERATION.HAIR;
-      else if (category === 'fashion') prompt = prompts.STYLE_GENERATION.FASHION;
-      else if (category === 'grooming') prompt = prompts.STYLE_GENERATION.GROOMING;
-      const response = await retryWithBackoff<GenerateContentResponse>(() => ai.models.generateContent({
-          model: AI_MODELS.IMAGE_GENERATION,
-          contents: { parts: [{ inlineData: { mimeType: "image/jpeg", data: base64Data } }, { text: prompt }] },
-          config: { imageConfig: { aspectRatio: "3:4", imageSize: "1K" } },
-      }));
-      for (const part of response.candidates?.[0]?.content?.parts || []) {
-          if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-image-preview',
+      contents: {
+        parts: [
+          { inlineData: { mimeType: "image/jpeg", data: base64Data } },
+          { text: prompt }
+        ]
+      },
+      config: {
+        imageConfig: { aspectRatio: "3:4", imageSize: "1K" }
       }
-      throw new Error("No style image generated.");
-  } catch (error) { throw error; }
-};
+    });
 
-export const generateProcedureSimulation = async (base64Image: string, procedureName: string, description: string): Promise<string> => {
-    try {
-        await ensureKey();
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
-        
-        const prompt = `
-        TASK: HYPER-REALISTIC SURGICAL VISUALIZATION.
-        PROCEDURE: ${procedureName}. 
-        CLINICAL GOAL: ${description}.
-        STRICT RULES:
-        1. Maintain 100% identity of the subject (hair, skin color, background, lighting).
-        2. Perform structural anatomical remapping ONLY for the specified procedure.
-        3. For bone surgery: Modify bone contours (e.g., sharper jaw, projected chin, straighter nose).
-        4. No artistic filters. Result must look like a real post-operative photo.
-        5. Output 8k photorealistic quality.
-        `;
-
-        const response = await retryWithBackoff<GenerateContentResponse>(() => ai.models.generateContent({
-            model: AI_MODELS.IMAGE_GENERATION,
-            contents: { parts: [{ inlineData: { mimeType: "image/jpeg", data: base64Data } }, { text: prompt }] },
-            config: { imageConfig: { aspectRatio: "1:1", imageSize: "1K" } },
-        }));
-        
-        for (const part of response.candidates?.[0]?.content?.parts || []) {
-            if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
+    if (response.candidates && response.candidates[0].content.parts) {
+      for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData) {
+          return `data:image/png;base64,${part.inlineData.data}`;
         }
-        throw new Error("Surgical simulation failed.");
-    } catch (error) { throw error; }
+      }
+    }
+    return null;
+  } catch (error) { return null; }
 };
 
-export const analyzeProgressPhoto = async (base64Image: string): Promise<{ score: number; feedback: string }> => {
-    try {
-        await ensureKey();
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
-        const prompts = getSystemPrompts(getUserLanguage());
-        const response = await retryWithBackoff<GenerateContentResponse>(() => ai.models.generateContent({
-             model: AI_MODELS.TEXT_ANALYSIS, 
-             contents: { parts: [{ inlineData: { mimeType: "image/jpeg", data: base64Data } }, { text: prompts.COACH_USER_PROMPT }] },
-             config: { systemInstruction: prompts.COACH_SYSTEM_INSTRUCTION, responseMimeType: "application/json" }
-        }));
-        if (!response.text) throw new Error("No response from Coach AI");
-        try { return JSON.parse(response.text); } catch (e) { return { score: 5, feedback: "Keep focused. Stay hydrated." }; }
-    } catch (error) { return { score: 0, feedback: "Analysis failed." }; }
+export const generateOptimalImage = async (base64Image: string, identifier: string): Promise<string | null> => {
+  const profile = getUserProfile();
+  const prompts = getSystemPrompts(profile?.language || 'English');
+  let key = identifier.toUpperCase();
+  if (key === 'SOFTMAX') key = 'SOFTMAXX';
+  if (key === 'HARDMAX') key = 'HARDMAXX';
+  const promptText = (prompts.IMAGE_GENERATION as any)[key] || prompts.IMAGE_GENERATION.SOFTMAXX;
+  return generateStyleSim(base64Image, promptText);
 };
 
-export const chatWithCoach = async (history: ChatMessage[], newMessage: string): Promise<string> => {
-    try {
-        await ensureKey();
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const chat = ai.chats.create({
-            model: AI_MODELS.TEXT_ANALYSIS,
-            config: {
-                systemInstruction: `You are the LooksMaxx King Coach. Tough, direct, helpful. 
-                Recipes & Protocols:
-                - Ninja Creami: Fairlife Milk + Whey + SF Pudding. Freeze 24h.
-                - Protein Bowl: Ground Beef (Get any fat % the butcher gives you; Keto is about cutting carbs, not fearing beef fat), Air Fryer, Onions, Pickles, Mustard, Hot Sauce.
-                - Nasal Breathing: Mouth Tape is essential for jawline development.
-                - Intermittent Fasting: Zero calories until noon is mandatory for hormonal peak.
-                Be concise. Be motivating. Be the King.`,
-            },
-            history: history.map(m => ({ role: m.role, parts: [{ text: m.text }] }))
-        });
-        const response = await chat.sendMessage({ message: newMessage });
-        return response.text || "Keep grinding.";
-    } catch (e) { return "The Coach is busy. Try again later."; }
-}
+export const generateStyleInspiration = async (base64Image: string, category: string): Promise<string | null> => {
+  const profile = getUserProfile();
+  const prompts = getSystemPrompts(profile?.language || 'English');
+  const key = category.toUpperCase() as keyof typeof prompts.STYLE_GENERATION;
+  const promptText = prompts.STYLE_GENERATION[key] || prompts.STYLE_GENERATION.HAIR;
+  return generateStyleSim(base64Image, promptText);
+};
+
+export const generateSequentialImprovement = async (base64Image: string, improvement: string, previousImprovements: string[]): Promise<string | null> => {
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const base64Data = base64Image.includes('base64,') ? base64Image.split('base64,')[1] : base64Image;
+    const context = previousImprovements.length > 0 ? `Subject already has: ${previousImprovements.join(', ')}. ` : "";
+
+    const promptText = `
+Subject base image provided. ${context} 
+TASK: Apply a GQ-model level photorealistic modification to improve only: ${improvement}.
+RESTRAINTS: Preserve subject identity. 
+MANDATORY BIOLOGICAL MARKERS: 
+1. Skin must be clear and texture-refined.
+2. Face must show 10-12% body fat definition.
+3. Jawline must show masseter hypertrophy.
+Modify ONLY the target area and overall biological status. Output ONLY the resulting image part.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-image-preview',
+      contents: {
+        parts: [{ inlineData: { mimeType: "image/jpeg", data: base64Data } }, { text: promptText }]
+      },
+      config: { imageConfig: { aspectRatio: "3:4", imageSize: "1K" } }
+    });
+
+    if (response.candidates && response.candidates[0].content.parts) {
+      for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData) {
+          return `data:image/png;base64,${part.inlineData.data}`;
+        }
+      }
+    }
+    return null;
+  } catch (error) { return null; }
+};
+
+export const analyzeProgressPhoto = async (base64Image: string): Promise<{ score: number, feedback: string }> => {
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const base64Data = base64Image.includes('base64,') ? base64Image.split('base64,')[1] : base64Image;
+    const prompts = getSystemPrompts('English');
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: {
+        parts: [
+          { inlineData: { mimeType: "image/jpeg", data: base64Data } },
+          { text: prompts.COACH_USER_PROMPT },
+        ],
+      },
+      config: {
+        systemInstruction: prompts.COACH_SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            score: { type: Type.NUMBER },
+            feedback: { type: Type.STRING }
+          },
+          required: ["score", "feedback"]
+        },
+        temperature: 0.1,
+        thinkingConfig: { thinkingBudget: 0 }
+      },
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("Audit stream corrupted.");
+    return JSON.parse(text);
+  } catch (error) {
+    return { score: 0, feedback: "Audit failed. Discipline required." };
+  }
+};
+
+export const generateProcedureSimulation = async (base64Image: string, procedureName: string, description: string): Promise<string | null> => {
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const base64Data = base64Image.includes('base64,') ? base64Image.split('base64,')[1] : base64Image;
+    const promptText = `8k clinical surgical simulation of: ${procedureName}. Instruction: ${description}. Modify ONLY the target area while preserving identity. Match clinical lighting.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-image-preview',
+      contents: { parts: [{ inlineData: { mimeType: "image/jpeg", data: base64Data } }, { text: promptText }] },
+      config: { imageConfig: { aspectRatio: "3:4", imageSize: "1K" } }
+    });
+
+    if (response.candidates && response.candidates[0].content.parts) {
+      for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData) {
+          return `data:image/png;base64,${part.inlineData.data}`;
+        }
+      }
+    }
+    return null;
+  } catch (error) { return null; }
+};
+
+/**
+ * AI CONCIERGE: 24/7 Support & Coaching
+ */
+export const askAIConcierge = async (message: string, history: any[]): Promise<string> => {
+  try {
+    const apiKey = process.env.API_KEY || (typeof window !== 'undefined' ? (window as any)._env_?.GEMINI_API_KEY : null);
+    if (!apiKey) throw new Error("API Key missing for concierge");
+
+    const ai = new GoogleGenAI({ apiKey });
+    const profile = getUserProfile();
+    const prompts = getSystemPrompts(profile?.language || 'English');
+
+    const context = `
+USER PROFILE: Level ${profile?.level}, Rank ${profile?.rank}.
+SCANS COMPLETED: ${profile?.usage?.audit?.count || 0}.
+IS_PREMIUM: ${profile?.isPremium}.
+`.trim();
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [
+        ...history,
+        { role: 'user', parts: [{ text: message }] }
+      ],
+      config: {
+        systemInstruction: prompts.CONCIERGE_SYSTEM_INSTRUCTION + "\n\n" + context,
+        temperature: 0.7,
+      }
+    });
+
+    return response.text;
+  } catch (error) {
+    console.error("Concierge failure:", error);
+    return "Protocol re-engagement required. The King's guard is calculating your next move.";
+  }
+};
+
+/**
+ * SEO FACTORY: Automated Content Generation
+ */
+export const generateBloggerContent = async (keyword: string): Promise<string | null> => {
+  try {
+    const apiKey = process.env.API_KEY || (typeof window !== 'undefined' ? (window as any)._env_?.GEMINI_API_KEY : null);
+    const ai = new GoogleGenAI({ apiKey: apiKey! });
+    const prompts = getSystemPrompts('English');
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: { role: 'user', parts: [{ text: `KEYWORD: ${keyword}` }] },
+      config: {
+        systemInstruction: prompts.BLOG_SYSTEM_INSTRUCTION,
+        temperature: 0.9,
+      }
+    });
+
+    return response.text;
+  } catch (error) {
+    console.error("Blogger failure:", error);
+    return null;
+  }
+};

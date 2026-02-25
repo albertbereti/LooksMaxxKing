@@ -1,229 +1,140 @@
 
 import { Schema, Type } from "@google/genai";
 
+const SUB_ANALYSIS_SCHEMA: Schema = {
+  type: Type.OBJECT,
+  properties: {
+    score: { type: Type.NUMBER },
+    feedback: { type: Type.STRING, description: "Direct answer to 'what is wrong' with this specific feature." },
+    products: { 
+      type: Type.ARRAY, 
+      items: { 
+        type: Type.OBJECT, 
+        properties: { 
+          name: { type: Type.STRING }, 
+          searchQuery: { type: Type.STRING } 
+        } 
+      } 
+    }
+  },
+  required: ["score", "feedback", "products"]
+};
+
 export const ANALYSIS_SCHEMA: Schema = {
   type: Type.OBJECT,
   properties: {
     overallScore: { type: Type.NUMBER },
     potentialScore: { type: Type.NUMBER },
+    selectionProbability: { type: Type.NUMBER },
+    selectionPoolPercentile: { type: Type.NUMBER },
+    capitalLeakage: { type: Type.NUMBER },
     summary: { type: Type.STRING },
+    genomicWarning: { type: Type.STRING },
     estimatedDaysToPotential: { type: Type.NUMBER },
-    milestones: {
+    
+    // THE DECALOGUE
+    ratings: {
+      type: Type.OBJECT,
+      properties: {
+        eyes: SUB_ANALYSIS_SCHEMA,
+        nose: SUB_ANALYSIS_SCHEMA,
+        eyebrows: SUB_ANALYSIS_SCHEMA,
+        jawline: SUB_ANALYSIS_SCHEMA,
+        skin: SUB_ANALYSIS_SCHEMA,
+        hair: SUB_ANALYSIS_SCHEMA,
+        beard: SUB_ANALYSIS_SCHEMA,
+        ears: SUB_ANALYSIS_SCHEMA,
+        midface: SUB_ANALYSIS_SCHEMA,
+        symmetry: SUB_ANALYSIS_SCHEMA
+      },
+      required: ["eyes", "nose", "eyebrows", "jawline", "skin", "hair", "beard", "ears", "midface", "symmetry"]
+    },
+
+    leanmaxxing: {
+      type: Type.OBJECT,
+      properties: {
+        estimatedBodyFat: { type: Type.NUMBER },
+        targetBodyFat: { type: Type.NUMBER },
+        dailyCaloricTarget: { type: Type.NUMBER },
+        protocol: { type: Type.STRING }
+      },
+      required: ["estimatedBodyFat", "targetBodyFat", "protocol", "dailyCaloricTarget"]
+    },
+    myofunctional: {
+      type: Type.OBJECT,
+      properties: {
+        mewingStatus: { type: Type.STRING, enum: ['Active', 'Deficient', 'Corrected'] },
+        chewingProtocol: { type: Type.STRING },
+        masseterDevelopment: { type: Type.NUMBER }
+      },
+      required: ["mewingStatus", "chewingProtocol", "masseterDevelopment"]
+    },
+    flaws: {
       type: Type.ARRAY,
       items: {
         type: Type.OBJECT,
         properties: {
           label: { type: Type.STRING },
-          week: { type: Type.NUMBER },
-          description: { type: Type.STRING }
+          impact: { type: Type.STRING, enum: ['High', 'Medium', 'Low'] },
+          deduction: { type: Type.NUMBER },
+          howToFix: { type: Type.STRING },
+          potentialGain: { type: Type.NUMBER },
+          timeToFix: { type: Type.STRING },
+          hardwareID: { type: Type.STRING },
+          pillar: { type: Type.STRING, enum: ['SOFTMAXXING', 'PEPTIDE MAXXING', 'HARDMAXXING'] }
         },
-        required: ["label", "week", "description"]
+        required: ["label", "impact", "deduction", "howToFix", "potentialGain", "timeToFix", "hardwareID", "pillar"]
       }
     },
-    bestFeature: { type: Type.STRING },
-    weaknesses: {
+    softMaxingProtocol: {
+      type: Type.OBJECT,
+      properties: {
+        title: { type: Type.STRING },
+        routine: { 
+          type: Type.ARRAY, 
+          items: { 
+            type: Type.OBJECT,
+            properties: {
+              category: { type: Type.STRING },
+              task: { type: Type.STRING },
+              importance: { type: Type.STRING }
+            },
+            required: ["category", "task", "importance"]
+          } 
+        },
+        products: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { id: { type: Type.STRING }, name: { type: Type.STRING } } } }
+      },
+      required: ["title", "routine", "products"]
+    },
+    peptideMaxxing: {
       type: Type.ARRAY,
-      items: { type: Type.STRING },
-    },
-    skinAnalysis: {
-      type: Type.OBJECT,
-      properties: {
-        score: { type: Type.NUMBER },
-        summary: { type: Type.STRING },
-        products: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              reason: { type: Type.STRING },
-              searchQuery: { type: Type.STRING },
-            },
-            required: ["name", "reason", "searchQuery"],
-          },
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          peptide: { type: Type.STRING },
+          purpose: { type: Type.STRING },
+          frequency: { type: Type.STRING },
+          hardwareID: { type: Type.STRING },
+          riskProfile: { type: Type.STRING }
         },
-      },
-      required: ["score", "summary", "products"],
-    },
-    eyeAnalysis: {
-      type: Type.OBJECT,
-      properties: {
-        score: { type: Type.NUMBER },
-        summary: { type: Type.STRING },
-        products: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              reason: { type: Type.STRING },
-              searchQuery: { type: Type.STRING },
-            },
-            required: ["name", "reason", "searchQuery"],
-          },
-        },
-      },
-      required: ["score", "summary", "products"],
-    },
-    hydrationAnalysis: {
-      type: Type.OBJECT,
-      properties: {
-        score: { type: Type.NUMBER },
-        summary: { type: Type.STRING },
-        products: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              reason: { type: Type.STRING },
-              searchQuery: { type: Type.STRING },
-            },
-            required: ["name", "reason", "searchQuery"],
-          },
-        },
-      },
-      required: ["score", "summary", "products"],
-    },
-    beardAnalysis: {
-      type: Type.OBJECT,
-      properties: {
-        score: { type: Type.NUMBER },
-        summary: { type: Type.STRING },
-        products: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              reason: { type: Type.STRING },
-              searchQuery: { type: Type.STRING },
-            },
-            required: ["name", "reason", "searchQuery"],
-          },
-        },
-      },
-      required: ["score", "summary", "products"],
-    },
-    earAnalysis: {
-      type: Type.OBJECT,
-      properties: {
-        score: { type: Type.NUMBER },
-        summary: { type: Type.STRING },
-        products: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              reason: { type: Type.STRING },
-              searchQuery: { type: Type.STRING },
-            },
-            required: ["name", "reason", "searchQuery"],
-          },
-        },
-      },
-      required: ["score", "summary", "products"],
-    },
-    hairAnalysis: {
-      type: Type.OBJECT,
-      properties: {
-        score: { type: Type.NUMBER },
-        summary: { type: Type.STRING },
-        products: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              reason: { type: Type.STRING },
-              searchQuery: { type: Type.STRING },
-            },
-            required: ["name", "reason", "searchQuery"],
-          },
-        },
-      },
-      required: ["score", "summary", "products"],
-    },
-    hairlineAnalysis: {
-      type: Type.OBJECT,
-      properties: {
-        score: { type: Type.NUMBER },
-        shape: { type: Type.STRING },
-        summary: { type: Type.STRING },
-        products: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              reason: { type: Type.STRING },
-              searchQuery: { type: Type.STRING },
-            },
-            required: ["name", "reason", "searchQuery"],
-          },
-        },
-      },
-      required: ["score", "shape", "summary", "products"],
+        required: ["peptide", "purpose", "frequency", "hardwareID", "riskProfile"]
+      }
     },
     hardmaxxing: {
       type: Type.ARRAY,
       items: {
         type: Type.OBJECT,
         properties: {
-          name: { type: Type.STRING, description: "Medical name of procedure, e.g., 'Rhinoplasty', 'Bimaxillary Osteotomy'." },
-          type: { type: Type.STRING, enum: ['Surgical', 'Non-Surgical', 'Dental'] },
-          costEstimate: { type: Type.STRING, description: "Estimated price range in USD, e.g., '$5,000 - $10,000'." },
-          recoveryTime: { type: Type.STRING, description: "Estimated downtime, e.g., '2 Weeks'." },
-          painLevel: { type: Type.STRING, enum: ['Low', 'Moderate', 'High'] },
-          riskLevel: { type: Type.STRING, enum: ['Low', 'Moderate', 'High'] },
-          description: { type: Type.STRING, description: "Technical/Scientific explanation of what is done." },
-          expectedResult: { type: Type.STRING, description: "The visual outcome on the face." }
-        },
-        required: ["name", "type", "costEstimate", "recoveryTime", "painLevel", "riskLevel", "description", "expectedResult"]
-      }
-    },
-    features: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          feature: { type: Type.STRING },
-          score: { type: Type.NUMBER },
-          comment: { type: Type.STRING },
-        },
-        required: ["feature", "score", "comment"],
-      },
-    },
-    improvements: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          title: { type: Type.STRING },
+          name: { type: Type.STRING },
+          costEstimate: { type: Type.STRING },
+          recoveryTime: { type: Type.STRING },
           description: { type: Type.STRING },
-          priority: { type: Type.STRING, enum: ["High", "Medium", "Low"] },
-          category: { type: Type.STRING, enum: ["Health", "Grooming", "Fitness", "Aesthetics"] },
-          stepByStep: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-          },
-          products: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                name: { type: Type.STRING },
-                reason: { type: Type.STRING },
-                searchQuery: { type: Type.STRING },
-              },
-              required: ["name", "reason", "searchQuery"],
-            },
-          },
+          riskLevel: { type: Type.STRING, enum: ['Low', 'Moderate', 'High'] },
+          educationalNote: { type: Type.STRING }
         },
-        required: ["title", "description", "priority", "category", "stepByStep", "products"],
-      },
-    },
+        required: ["name", "costEstimate", "recoveryTime", "description", "riskLevel", "educationalNote"]
+      }
+    }
   },
-  required: ["overallScore", "potentialScore", "summary", "weaknesses", "features", "improvements", "bestFeature", "hardmaxxing", "skinAnalysis", "eyeAnalysis", "hydrationAnalysis", "beardAnalysis", "earAnalysis", "hairAnalysis", "hairlineAnalysis", "estimatedDaysToPotential", "milestones"],
+  required: ["overallScore", "potentialScore", "summary", "flaws", "softMaxingProtocol", "hardmaxxing", "peptideMaxxing", "leanmaxxing", "myofunctional", "ratings"]
 };

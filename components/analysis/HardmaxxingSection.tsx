@@ -2,6 +2,7 @@
 import React, { useRef } from 'react';
 import { LooksAnalysis } from '../../types';
 import { Button } from '../Button';
+import { BeforeAfterSlider } from '../ui/BeforeAfterSlider';
 
 interface HardmaxxingSectionProps {
   analysis: LooksAnalysis;
@@ -31,8 +32,6 @@ export const HardmaxxingSection: React.FC<HardmaxxingSectionProps> = ({
     onGenerate,
     procedureImages,
     loadingProcedure,
-    toggleView,
-    toggledState,
     onCompare,
     imageData,
     customImage,
@@ -56,7 +55,7 @@ export const HardmaxxingSection: React.FC<HardmaxxingSectionProps> = ({
         {/* Paywall Overlay */}
         {!isPremiumUnlocked && (
             <div 
-                className="absolute inset-0 z-30 backdrop-blur-md bg-zinc-950/70 flex flex-col items-center justify-center text-center p-6 cursor-pointer transition-all duration-500" 
+                className="absolute inset-0 z-[60] backdrop-blur-md bg-zinc-950/70 flex flex-col items-center justify-center text-center p-6 cursor-pointer transition-all duration-500" 
                 onClick={onUnlock}
             >
                 <div className="w-20 h-20 bg-zinc-800/80 rounded-full flex items-center justify-center border-2 border-red-500 mb-6 shadow-2xl">
@@ -92,67 +91,71 @@ export const HardmaxxingSection: React.FC<HardmaxxingSectionProps> = ({
                 {analysis.hardmaxxing.map((proc, idx) => {
                     const hasSim = !!procedureImages[proc.name];
                     const isLoading = loadingProcedure === proc.name;
-                    const isToggled = toggledState[proc.name];
+                    const baseImg = customImage || imageData;
 
                     return (
-                        <div key={idx} className="bg-black border border-zinc-800 rounded-[2rem] overflow-hidden flex flex-col group hover:border-red-500/40 transition-all shadow-2xl">
+                        <div key={idx} className="bg-black border border-zinc-800 rounded-[2.5rem] overflow-hidden flex flex-col group hover:border-red-500/40 transition-all shadow-2xl">
                             <div className="relative aspect-square bg-zinc-900 overflow-hidden border-b border-zinc-800">
-                                {hasSim ? (
-                                    <>
-                                        <img 
-                                            src={isToggled ? procedureImages[proc.name] : (customImage || imageData || procedureImages[proc.name])} 
-                                            className="w-full h-full object-cover animate-fade-in"
-                                            alt={proc.name}
+                                {hasSim && baseImg ? (
+                                    <div className="w-full h-full scale-[1.01]">
+                                        <BeforeAfterSlider 
+                                            before={baseImg} 
+                                            after={procedureImages[proc.name]} 
+                                            label={proc.name} 
                                         />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
-                                        <div className="absolute bottom-4 left-4 right-4 flex gap-2">
-                                            <button 
-                                                onClick={() => toggleView(proc.name)} 
-                                                className={`flex-grow ${isToggled ? 'bg-red-600' : 'bg-white/10'} text-white text-[10px] py-3 rounded-xl font-black uppercase tracking-widest backdrop-blur-md border border-white/20 transition-all`}
-                                            >
-                                                {isToggled ? "SIMULATED VIEW" : "RESTORE BASE"}
-                                            </button>
+                                        
+                                        {/* SURGICAL DELTA OVERLAY */}
+                                        <div className="absolute top-4 left-4 z-40 pointer-events-none">
+                                            <div className="bg-red-950/80 backdrop-blur-xl border border-red-500/30 p-3 rounded-2xl shadow-2xl animate-fade-in">
+                                                <p className="text-red-500 font-black text-[7px] uppercase tracking-[0.4em] mb-1 italic">DELTA_AUDIT</p>
+                                                <p className="text-white text-[9px] font-black uppercase italic leading-tight max-w-[120px]">
+                                                    {proc.description.split('. ')[0]}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="absolute top-4 right-4 z-40">
                                             <button 
                                                 onClick={() => onCompare(procedureImages[proc.name])} 
-                                                className="bg-white text-black p-3 rounded-xl hover:bg-gray-200 transition-all"
+                                                className="bg-white/10 backdrop-blur-md text-white p-3 rounded-2xl border border-white/20 hover:bg-white hover:text-black transition-all shadow-2xl"
                                             >
-                                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+                                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                             </button>
                                         </div>
-                                    </>
+                                    </div>
                                 ) : (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
                                         {isLoading ? (
                                             <div className="flex flex-col items-center">
-                                                <div className="w-12 h-12 border-4 border-red-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                                                <span className="text-[10px] text-zinc-500 font-black uppercase animate-pulse">Structural Remapping...</span>
+                                                <div className="w-12 h-12 border-4 border-red-500 border-t-transparent rounded-full animate-spin mb-4 shadow-[0_0_15px_rgba(220,38,38,0.5)]"></div>
+                                                <span className="text-[10px] text-zinc-500 font-black uppercase animate-pulse tracking-widest italic">Clinical Remapping...</span>
                                             </div>
                                         ) : (
-                                            <div className="flex flex-col items-center gap-4">
-                                                <div className="w-12 h-12 bg-zinc-800 rounded-full flex items-center justify-center text-zinc-600">
-                                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                            <div className="flex flex-col items-center gap-6">
+                                                <div className="w-16 h-16 bg-zinc-800 rounded-[1.5rem] flex items-center justify-center text-zinc-600 border border-white/5 shadow-inner group-hover:bg-red-500/10 group-hover:text-red-500 transition-all">
+                                                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
                                                 </div>
                                                 <Button 
                                                     onClick={() => onGenerate(proc.name, proc.description)} 
-                                                    className="text-[10px] py-3 px-8 bg-zinc-800 text-white border-zinc-700 hover:bg-white hover:text-black transition-all font-black uppercase italic"
+                                                    className="text-[11px] py-4 px-10 bg-zinc-800 text-white border-none hover:bg-white hover:text-black transition-all font-black uppercase italic tracking-widest rounded-2xl shadow-xl"
                                                 >
-                                                    Visualize Reconstruction
+                                                    RECONSTRUCT FACE
                                                 </Button>
                                             </div>
                                         )}
                                     </div>
                                 )}
                             </div>
-                            <div className="p-6 flex flex-col gap-3 flex-grow bg-zinc-950">
+                            <div className="p-8 flex flex-col gap-4 flex-grow bg-zinc-950">
                                 <div className="flex justify-between items-start">
-                                    <h4 className="text-lg font-black text-white uppercase italic tracking-tight">{proc.name}</h4>
-                                    <div className="text-right"><div className="text-xs font-black text-emerald-500 font-mono">{proc.costEstimate}</div></div>
+                                    <h4 className="text-xl font-black text-white uppercase italic tracking-tighter leading-none">{proc.name}</h4>
+                                    <div className="text-right"><div className="text-[10px] font-black text-emerald-500 font-mono italic tracking-tighter">{proc.costEstimate}</div></div>
                                 </div>
                                 <div className="flex gap-2">
-                                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${proc.riskLevel === 'High' ? 'bg-red-900/40 text-red-500' : 'bg-zinc-800 text-zinc-400'}`}>Risk: {proc.riskLevel}</span>
-                                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-zinc-800 text-zinc-400">Time: {proc.recoveryTime}</span>
+                                    <span className={`text-[8px] font-black uppercase px-2.5 py-1 rounded-lg ${proc.riskLevel === 'High' ? 'bg-red-900/40 text-red-500 border border-red-500/20' : 'bg-zinc-800 text-zinc-400'}`}>RISK: {proc.riskLevel}</span>
+                                    <span className="text-[8px] font-black uppercase px-2.5 py-1 rounded-lg bg-zinc-800 text-zinc-400">REC: {proc.recoveryTime}</span>
                                 </div>
-                                <p className="text-[11px] text-zinc-400 leading-relaxed font-medium line-clamp-3">{proc.description}</p>
+                                <p className="text-[12px] text-zinc-400 leading-relaxed font-bold italic uppercase tracking-tight opacity-70 line-clamp-3">{proc.description}</p>
                             </div>
                         </div>
                     );

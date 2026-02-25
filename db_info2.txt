@@ -1,0 +1,18 @@
+﻿---
+appEngineIntegrationMode: ENABLED
+concurrencyMode: PESSIMISTIC
+createTime: '2026-01-26T05:49:08.623794Z'
+databaseEdition: STANDARD
+deleteProtectionState: DELETE_PROTECTION_DISABLED
+earliestVersionTime: '2026-02-24T04:21:50.070003Z'
+etag: IK+fi4Sx8ZIDMJWZl+Gp8JID
+freeTier: true
+keyPrefix: s
+locationId: nam5
+name: projects/gen-lang-client-0394791038/databases/(default)
+pointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED
+realtimeUpdatesMode: REALTIME_UPDATES_MODE_DISABLED
+type: DATASTORE_MODE
+uid: 720a2247-cbbd-402c-8b2d-e5bd87bb9e06
+updateTime: '2026-01-26T05:49:08.623794Z'
+versionRetentionPeriod: 3600s

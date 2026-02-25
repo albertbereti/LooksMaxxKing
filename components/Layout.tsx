@@ -1,92 +1,112 @@
+
 import React from 'react';
 import { CrownLogo } from './CrownLogo';
 import { useUser } from '../contexts/UserContext';
 import { AppState } from '../types';
 
 interface LayoutProps {
-  children: React.ReactNode;
-  onNavigate: (state: AppState) => void;
-  onOpenSettings: () => void;
-  onRetake: () => void;
-  darkMode: boolean;
-  toggleTheme: () => void;
+    children: React.ReactNode;
+    onNavigate: (state: AppState) => void;
+    onOpenSettings: () => void;
+    onRetake: () => void;
+    darkMode: boolean;
+    toggleTheme: () => void;
+    currentState: AppState;
+    cartCount?: number;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ 
-    children, 
-    onNavigate, 
-    onOpenSettings, 
-    onRetake, 
-    darkMode, 
-    toggleTheme 
+export const Layout: React.FC<LayoutProps> = ({
+    children,
+    onNavigate,
+    onOpenSettings,
+    onRetake,
+    currentState,
+    cartCount = 0
 }) => {
-  const { user } = useUser();
+    const { user } = useUser();
 
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#09090b] text-gray-900 dark:text-zinc-100 selection:bg-amber-200 dark:selection:bg-amber-500/30 transition-colors duration-300 flex flex-col font-sans">
-      
-      {/* Navbar */}
-      <header className="px-4 md:px-8 py-5 pt-safe flex justify-between items-center max-w-7xl mx-auto w-full z-40 relative flex-none">
-        <div className="flex items-center gap-3 cursor-pointer group" onClick={onRetake}>
-           <div className="relative">
-              <div className="absolute inset-0 bg-amber-400 blur-lg opacity-0 group-hover:opacity-40 transition-opacity rounded-full"></div>
-              <CrownLogo className="w-8 h-8 text-gray-900 dark:text-white group-hover:text-amber-500 transition-colors relative z-10" />
-           </div>
-           <div className="flex flex-col">
-               <h1 className="text-xl md:text-2xl font-black tracking-tighter flex items-center leading-none">
-                 LOOKSMAXX
-                 <span className="text-amber-500 dark:text-amber-400 ml-1">KING</span>
-               </h1>
-               <span className="text-[8px] font-bold uppercase text-zinc-500 tracking-[0.2em] mt-1">Professional Suite</span>
-           </div>
-        </div>
-        <div className="flex items-center gap-3 md:gap-4">
-            <nav className="hidden lg:flex gap-6 items-center">
-                 {user && (
-                    <div className="flex items-center gap-2 bg-zinc-200 dark:bg-zinc-800 rounded-full px-3 py-1 border border-amber-500/20">
-                        <span className="text-[10px] font-black uppercase text-amber-600 dark:text-amber-500">Royal Credits: {user.credits}</span>
+    const level = user?.level || 1;
+    const currentXP = user?.xp || 0;
+    const xpNeeded = level * 1000;
+    const xpProgress = (currentXP / xpNeeded) * 100;
+
+    const showFooter = currentState !== AppState.IDLE &&
+        currentState !== AppState.CAMERA &&
+        currentState !== AppState.ANALYZING;
+
+    return (
+        <div className="flex flex-col h-screen max-h-screen bg-black text-zinc-100 font-sans overflow-hidden items-center">
+
+            {/* SAI HUD */}
+            <header className="flex-none w-full max-w-7xl z-[100] glass border-b border-white/5 shadow-2xl">
+                <div className="pt-[env(safe-area-inset-top)] px-4 h-[calc(44px+env(safe-area-inset-top))] flex justify-between items-center w-full">
+                    <div className="flex items-center gap-2 cursor-pointer active:scale-95 transition-transform" onClick={onRetake}>
+                        <CrownLogo className="w-5 h-5 text-amber-500" />
+                        <div className="flex flex-col">
+                            <h1 className="text-[10px] font-black tracking-tighter leading-none uppercase italic text-white">LOOKSMAXX<span className="text-amber-500">KING</span></h1>
+                            <span className="text-[6px] font-black uppercase text-zinc-600 tracking-widest">LEVEL {user?.level || 1}</span>
+                        </div>
                     </div>
-                 )}
-                 <button onClick={() => onNavigate(AppState.HISTORY)} className="text-[10px] font-bold uppercase tracking-widest hover:text-amber-500 transition-colors">
-                    Archives
-                 </button>
-                 <button onClick={() => onNavigate(AppState.COACH)} className="text-[10px] font-bold uppercase tracking-widest hover:text-amber-500 transition-colors">
-                    Coach
-                 </button>
-            </nav>
-            <button onClick={onOpenSettings} className="p-2.5 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-800 transition-colors relative">
-               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-               </svg>
-            </button>
-            <button onClick={toggleTheme} className="p-2.5 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-800 transition-colors bg-gray-100 dark:bg-zinc-900">
-                {darkMode ? '☀️' : '🌙'}
-            </button>
+
+                    <div className="flex items-center gap-3">
+                        {user && (
+                            <div className="flex flex-col items-end">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[7px] font-black text-zinc-700 uppercase tracking-widest">XP</span>
+                                    <span className={`text-[11px] font-[900] text-white`}>{user.xp}</span>
+                                </div>
+                                <div className="w-14 h-1 bg-zinc-900 rounded-full overflow-hidden border border-white/5">
+                                    <div className="h-full bg-amber-500 transition-all duration-1000" style={{ width: `${xpProgress}%` }} />
+                                </div>
+                            </div>
+                        )}
+
+                        <button
+                            onClick={() => onNavigate(AppState.CART)}
+                            aria-label="View cart"
+                            className="relative p-2 rounded-xl bg-white/5 border border-white/10 text-zinc-500 hover:text-white transition-colors"
+                        >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                            {cartCount > 0 && (
+                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-black text-[8px] font-black flex items-center justify-center rounded-full border border-black animate-pulse">
+                                    {cartCount}
+                                </span>
+                            )}
+                        </button>
+
+                        <button onClick={onOpenSettings} aria-label="Open settings" className="p-2 rounded-xl bg-white/5 border border-white/10 text-zinc-500 hover:text-white transition-colors">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <main className="flex-1 overflow-hidden relative z-10 w-full max-w-7xl flex flex-col mx-auto border-x border-white/[0.02]">
+                {children}
+            </main>
+
+            {showFooter && (
+                <footer className="flex-none z-[110] glass border-t border-white/5 footer-nav shadow-[0_-10px_30px_rgba(0,0,0,1)] animate-fade-in-up">
+                    <div className="max-w-lg mx-auto h-14 flex justify-around items-center px-2">
+                        <button onClick={onRetake} className={`flex flex-col items-center gap-0.5 transition-all ${currentState === AppState.RESULT ? 'text-amber-500' : 'text-zinc-700'}`}>
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                            <span className="text-[8px] font-black uppercase tracking-widest italic">Home</span>
+                        </button>
+                        <button onClick={() => onNavigate(AppState.SHOP)} className={`flex flex-col items-center gap-0.5 transition-all ${currentState === AppState.SHOP || currentState === AppState.PRODUCT || currentState === AppState.CART ? 'text-amber-500' : 'text-zinc-700'}`}>
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                            <span className="text-[8px] font-black uppercase tracking-widest italic">Store</span>
+                        </button>
+                        <button onClick={() => onNavigate(AppState.COACH)} className={`flex flex-col items-center gap-0.5 transition-all ${currentState === AppState.COACH ? 'text-amber-500' : 'text-zinc-700'}`}>
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                            <span className="text-[8px] font-black uppercase tracking-widest italic">Tasks</span>
+                        </button>
+                        <button onClick={() => onNavigate(AppState.HISTORY)} className={`flex flex-col items-center gap-0.5 transition-all ${currentState === AppState.HISTORY ? 'text-amber-500' : 'text-zinc-700'}`}>
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                            <span className="text-[8px] font-black uppercase tracking-widest italic">Logbook</span>
+                        </button>
+                    </div>
+                </footer>
+            )}
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-grow flex flex-col items-center justify-center p-4 relative z-10 w-full max-w-7xl mx-auto">
-        {children}
-      </main>
-
-      {/* Footer */}
-      <footer className="w-full max-w-7xl mx-auto px-6 py-8 border-t border-gray-200 dark:border-zinc-800 mt-auto text-center z-10 pb-safe">
-          <div className="max-w-2xl mx-auto text-[10px] md:text-xs text-gray-500 dark:text-zinc-600 space-y-2 font-medium">
-              <p className="font-bold text-gray-400 dark:text-zinc-500">AESTHETIC INTELLIGENCE DISCLAIMER</p>
-              <p>
-                LooksMaxx King uses experimental AI for professional aesthetic simulations. Not medical advice. 18+ required.
-              </p>
-              <div className="pt-4 flex justify-center gap-4 flex-wrap">
-                  <button onClick={() => onNavigate(AppState.BLOG)} className="hover:text-amber-500 transition-colors uppercase font-bold tracking-tighter">Knowledge</button>
-                  <span className="opacity-30">•</span>
-                  <button onClick={() => onNavigate(AppState.TERMINOLOGY)} className="hover:text-amber-500 transition-colors uppercase font-bold tracking-tighter">Glossary</button>
-                  <span className="opacity-30">•</span>
-                  <button onClick={onOpenSettings} className="hover:text-amber-500 transition-colors uppercase font-bold tracking-tighter">Refer Friends</button>
-              </div>
-              <p className="pt-2 opacity-50">© {new Date().getFullYear()} LooksMaxx King AI. Built for Professional Aesthetic Research.</p>
-          </div>
-      </footer>
-    </div>
-  );
+    );
 };

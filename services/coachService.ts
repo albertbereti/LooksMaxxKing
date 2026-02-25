@@ -1,5 +1,7 @@
+
 import { CoachDay, CoachTask, UserProfile } from "../types";
-import { getUserProfile, saveUserProfile, getHistory } from "./historyService";
+import { getUserProfile, saveUserProfile, awardXP } from "./historyService";
+import { HARDWARE_STORE_DB } from "../data/supplyChain";
 
 export const getCoachSchedule = (): CoachDay[] => {
     const profile = getUserProfile();
@@ -7,18 +9,17 @@ export const getCoachSchedule = (): CoachDay[] => {
 
     if (!profile) return [];
 
-    // Handle Streak Logic
     updateStreak(profile);
 
     if (profile.coachProgress && profile.coachProgress.length > 0) {
         if (!profile.coachProgress.find(d => d.date === today)) {
-             profile.coachProgress.push(generateDailyTasks(today));
+             profile.coachProgress.push(generateDailyTasks(today, profile));
              saveUserProfile(profile);
         }
         return profile.coachProgress;
     }
 
-    const schedule = [generateDailyTasks(today)];
+    const schedule = [generateDailyTasks(today, profile)];
     profile.coachProgress = schedule;
     saveUserProfile(profile);
     return schedule;
@@ -34,10 +35,7 @@ const updateStreak = (profile: UserProfile) => {
 
     if (profile.lastActiveDate === yesterdayStr) {
         profile.streak = (profile.streak || 0) + 1;
-    } else if (!profile.lastActiveDate) {
-        profile.streak = 1;
     } else {
-        // Streak broken
         profile.streak = 1;
     }
 
@@ -45,76 +43,84 @@ const updateStreak = (profile: UserProfile) => {
     saveUserProfile(profile);
 };
 
-const generateDailyTasks = (date: string): CoachDay => {
+const generateDailyTasks = (date: string, profile: UserProfile): CoachDay => {
     const dayOfWeek = new Date(date).getDay();
     const tasks: CoachTask[] = [];
 
-    // --- MORNING RITUALS ---
+    // Base Protocol
     tasks.push({ 
         id: `m-fast-${date}`, 
-        text: 'Intermittent Fast: Zero Cals until Noon', 
+        text: 'Dawn Protocol: Intermittent Fasting', 
         completed: false, 
-        category: 'DIET',
+        category: 'METABOLIC',
         section: 'MORNING',
+        xpValue: 50,
         details: {
-            why: "Forces ketosis and stabilizes insulin before the first meal.",
-            how: "Water, black coffee, or plain tea only."
+            why: "Autophagy forces skin cell renewal and reduces systemic facial bloating.",
+            how: "Consume zero calories until 1:00 PM. Hydrate with mineralized water only."
         }
     });
 
-    tasks.push({ 
-        id: `m-water-${date}`, 
-        text: 'Celtic Salt + 500ml Water', 
-        completed: false, 
-        category: 'DIET',
-        section: 'MORNING',
-        details: {
-            why: "Essential minerals for intracellular hydration.",
-            how: "Add a pinch of grey Celtic salt to room-temp water.",
-            products: [{ id: 'celtic-salt', name: 'Celtic Sea Salt', url: 'Celtic Sea Salt' }]
-        }
-    });
+    // Hardware Integration: If user has Mastic Gum
+    if (profile.inventory?.includes('mastic-gum')) {
+        tasks.push({ 
+            id: `m-mastic-${date}`, 
+            text: 'Hardware Mission: Mastic Loading', 
+            completed: false, 
+            category: 'STRUCTURE',
+            section: 'MORNING',
+            xpValue: 100,
+            isHardwareTask: true,
+            details: {
+                why: "Mechanical loading of the masseters forces mandibular widening via bone remodeling.",
+                how: "Chew for 20 mins per side with maximum resistance resin."
+            }
+        });
+    }
 
-    // --- WORKOUT & NUTRITION ---
-    let workout = "Active Recovery: 10k Steps";
-    if ([1, 3, 5].includes(dayOfWeek)) workout = "Hypertrophy Grind: V-Taper Focus";
+    // Hardware Integration: If user has Retinoid
+    if (profile.inventory?.includes('tretinoin')) {
+        tasks.push({ 
+            id: `e-retinoid-${date}`, 
+            text: 'Hardware Mission: Dermal Turnover', 
+            completed: false, 
+            category: 'SKIN',
+            section: 'EVENING',
+            xpValue: 80,
+            isHardwareTask: true,
+            details: {
+                why: "Forces rapid keratinocyte proliferation for glass-skin texture.",
+                how: "Apply pea-sized amount to bone-dry skin before sleep."
+            }
+        });
+    }
+
+    let workout = "Conditioning: 12k Step Baseline";
+    if ([1, 3, 5].includes(dayOfWeek)) workout = "Hypertrophy Phase: Lateral Frame Dominance";
     
     tasks.push({ 
         id: `w-lift-${date}`, 
         text: workout, 
         completed: false, 
-        category: 'FITNESS',
+        category: 'PHYSIQUE',
         section: 'WORKOUT',
+        xpValue: 120,
         details: {
-            why: "Mechanical tension drives testosterone and growth hormone.",
-            how: "Train near failure for 8-12 reps."
+            why: "Body fat optimization is the only path to structural reveal.",
+            how: "Focus on clavicle-widening movements and lateral delt load."
         }
     });
 
-    tasks.push({ 
-        id: `w-bowl-${date}`, 
-        text: 'Protein Bowl (Any Fat % Beef)', 
-        completed: false, 
-        category: 'DIET',
-        section: 'WORKOUT',
-        details: {
-            why: "Carb restriction is the key to Keto. Fat is energy. Use whatever beef your butcher provides; the fat will keep you satiated while the absence of sugar cuts the weight.",
-            how: "1lb ground beef + Onions + Pickles + Mustard. Air fry at 400°F.",
-            products: [{ id: 'air-fryer', name: 'Ninja Air Fryer', url: 'Ninja Air Fryer' }]
-        }
-    });
-
-    // --- EVENING RECOVERY ---
     tasks.push({ 
         id: `e-tape-${date}`, 
-        text: 'Mouth Tape Applied', 
+        text: 'Night Log: Vertical Airway Alignment', 
         completed: false, 
-        category: 'HABIT',
+        category: 'STRUCTURE',
         section: 'EVENING',
+        xpValue: 60,
         details: {
-            why: "Ensures nasal breathing to maintain jaw structure and deep REM.",
-            how: "Vertical strip over lips before bed.",
-            products: [{ id: 'mouth-tape', name: 'Sleep Mouth Tape', url: 'Mouth Tape for Sleeping' }]
+            why: "Prevents mouth breathing to maintain maxillary support and vertical face height.",
+            how: "Apply medical tape vertically over center of lips."
         }
     });
 
@@ -129,6 +135,9 @@ export const toggleCoachTask = (date: string, taskId: string) => {
         const task = day.tasks.find(t => t.id === taskId);
         if (task) {
             task.completed = !task.completed;
+            if (task.completed) {
+                awardXP(task.xpValue);
+            }
             saveUserProfile(profile);
         }
     }
@@ -139,9 +148,9 @@ export const addCoachPhoto = (date: string, photoData: string, feedback: string,
     if (!profile) return { success: false, message: "No profile found" };
     if (!profile.coachProgress) profile.coachProgress = [];
     let day = profile.coachProgress.find(d => d.date === date);
-    if (!day) { day = generateDailyTasks(date); profile.coachProgress.push(day); }
+    if (!day) { day = generateDailyTasks(date, profile); profile.coachProgress.push(day); }
     if (!day.photos) day.photos = [];
-    if (day.photos.length >= 3) return { success: false, message: "Daily limit reached." };
+    if (day.photos.length >= 3) return { success: false, message: "DAILY LOG LIMIT EXCEEDED." };
     day.photos.push({ id: Date.now().toString(), timestamp: new Date().toISOString(), imageUrl: photoData, feedback, score });
     saveUserProfile(profile);
     return { success: true };

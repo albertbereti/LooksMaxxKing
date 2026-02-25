@@ -100,11 +100,18 @@ export const TERMINOLOGY_DB: GlossaryTerm[] = [
             <h2>The Mathematics of the Eye</h2>
             <p><strong>Canthal Tilt</strong> is one of the most critical metrics in facial aesthetics. It subconsciously signals dominance vs. submission.</p>
             <ul>
-                <li><strong>Positive Tilt:</strong> Associated with <strong>Hunter Eyes</strong> and high testosterone.</li>
+                <li><strong>Positive Tilt:</strong> Associated with <strong>Hunter Eyes</strong> and high testosterone dominance.</li>
                 <li><strong>Neutral Tilt:</strong> Common and acceptable.</li>
-                <li><strong>Negative Tilt:</strong> The outer corner droops downwards. Often creates a tired or sad appearance ("Puppy Dog Eyes").</li>
+                <li><strong>Negative Tilt:</strong> The outer corner droops downwards. Often creates a tired, submissive, or sad appearance ("Puppy Dog Eyes").</li>
             </ul>
-            <p>Correction methods include <strong>Canthoplasty</strong> (Hardmaxxing) or 'squintmaxxing' (Softmaxxing) to build the lower eyelid muscle.</p>
+            
+            <h3>How to Fix Negative Canthal Tilt</h3>
+            <p>Neutralizing a negative tilt is a priority for anyone below a 7.0 score.</p>
+            <ul>
+                <li><strong>Softmaxxing:</strong> Strengthening the orbicularis oculi (lower eyelid muscle) through targeted squinting exercises. Application of <strong>Volufiline</strong> to the outer corner fat pads can provide a lifting effect.</li>
+                <li><strong>The Ascension Program:</strong> Our specific $29.99 monthly protocol contains the full mechanical training protocol to transition from negative to neutral tilt over 6 months.</li>
+                <li><strong>Hardmaxxing:</strong> Canthoplasty or Canthopexy. These surgical procedures mechanically reposition the lateral canthus to a higher vertical position.</li>
+            </ul>
         `
     },
     {

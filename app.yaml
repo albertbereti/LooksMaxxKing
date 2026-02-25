@@ -1,0 +1,41 @@
+runtime: nodejs20
+
+handlers:
+  # Service Worker - must be served with no-cache
+  - url: /service-worker.js
+    static_files: dist/service-worker.js
+    upload: dist/service-worker.js
+    secure: always
+    http_headers:
+      Cache-Control: "no-cache, no-store, must-revalidate"
+      Service-Worker-Allowed: "/"
+
+  # Serve all static files (js, css, images) directly
+  - url: /(.*\..+)$
+    static_files: dist/\1
+    upload: dist/(.*\..+)$
+    secure: always
+    http_headers:
+      Strict-Transport-Security: "max-age=31536000; includeSubDomains"
+      X-Frame-Options: "DENY"
+      X-Content-Type-Options: "nosniff"
+      Referrer-Policy: "strict-origin-when-cross-origin"
+
+  # Catch-all handler for React Router (Single Page App)
+  # Routes everything else to index.html
+  - url: /.*
+    static_files: dist/index.html
+    upload: dist/index.html
+    secure: always
+    http_headers:
+      Strict-Transport-Security: "max-age=31536000; includeSubDomains"
+      X-Frame-Options: "DENY"
+      X-Content-Type-Options: "nosniff"
+      Cache-Control: "no-cache, no-store, must-revalidate"
+      Pragma: "no-cache"
+      Expires: "0"
+
+env_variables:
+  NODE_ENV: "production"
+  # Set these in Google Cloud Console or via --env-vars-file
+  # GEMINI_API_KEY: "YOUR_KEY_HERE"
